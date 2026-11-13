@@ -407,6 +407,10 @@ body.rd .thumbs,body.rd .panel.intro{animation:rise 1.2s .7s cubic-bezier(.2,.8,
 #edOverlay .ed-wrap{max-width:560px;margin:0 auto}
 #edOverlay h1{font:300 32px/1.1 "Cormorant Garamond",Georgia,serif;margin:8px 0 6px}
 
+.ic-empty b em.ph{font-style:normal;font-weight:400;color:var(--mut);opacity:.8}
+#carEditCard .ce-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){#carEditCard .ce-grid{grid-template-columns:1fr}}
+#carEditCard .ce-grid .full{grid-column:1/-1}
 </style>
 </head>
 <body>
@@ -483,6 +487,19 @@ body.rd .thumbs,body.rd .panel.intro{animation:rise 1.2s .7s cubic-bezier(.2,.8,
 <section class="tab" id="t-car"><div class="pg"><h2 class="pt">Авто</h2><div class="sub">Нажми на значение, и оно скопируется</div>
 <div class="card"><div id="info"></div></div>
 <div class="card"><h3>Своё поле</h3><div class="dg2"><input class="srch" id="fl" placeholder="Название"><input class="srch" id="fv" placeholder="Значение"></div><button class="btn" id="fadd" style="margin-top:12px">Добавить</button></div>
+<div class="card" id="carEditCard"><h3>Паспорт машины</h3><div class="sm" style="margin-bottom:12px">VIN и номер можно оставить пустыми. Масло и цвет — по желанию.</div>
+<div class="ce-grid">
+<input class="srch full" id="ceTitle" placeholder="Марка и модель">
+<input class="srch" id="ceYear" placeholder="Год">
+<input class="srch" id="ceEngine" placeholder="Двигатель">
+<input class="srch full" id="ceVin" placeholder="VIN">
+<input class="srch full" id="cePlate" placeholder="Гос. номер">
+<input class="srch" id="ceOil" placeholder="Масло (необязательно)">
+<input class="srch" id="ceColor" placeholder="Цвет (необязательно)">
+<input class="srch full" id="ceSpec" placeholder="КПП, привод…">
+</div>
+<button class="btn" id="ceSave" style="margin-top:12px">Сохранить данные</button>
+</div>
 <div class="card" id="photoCard"><h3>Фото и узлы</h3><div class="sm" style="margin-bottom:12px">Замени фото, добавь ракурс или расставь точки заново</div><div id="sceneEditList"></div><div class="exp-row" style="margin-top:12px"><button class="btn" id="addScenePhoto">+ Фото</button><input type="file" id="addSceneFile" accept="image/*" hidden></div></div>
 <div class="card" id="safeCard" style="margin-top:24px"><h3>Данные</h3><div class="sm" id="safeSt" style="line-height:1.55"></div><div class="exp-row" style="margin-top:12px"><button class="btn" id="safeBak">Скачать копию</button><button class="gh" id="safePers">Защитить хранилище</button><button class="gh" id="exBak" hidden>Копия</button><button class="gh" id="imBak">Восстановить из файла</button><button class="gh" id="guideReplay">Пройти гид</button><button class="gh" id="exCsv" hidden>CSV</button><button class="gh" id="exJson" hidden>JSON</button><input type="file" id="imFile" accept=".json,application/json" hidden></div></div>
 </div></section>
@@ -502,7 +519,20 @@ const META0=(()=>{try{return JSON.parse(localStorage.getItem(SETUP_KEY)||"null")
 const CUSTOM=!!(META0&&META0.done&&!META0.demo);
 function getCars(){try{const a=JSON.parse(localStorage.getItem(CARS_KEY)||"null");if(Array.isArray(a)&&a.length)return a}catch(e){}return[{id:CAR,t:(META0&&META0.car&&META0.car.title)||"Основная"}]}
 function saveCars(a){try{localStorage.setItem(CARS_KEY,JSON.stringify(a))}catch(e){}}
-function infoFromMeta(){const c=(META0&&META0.car)||{};return[["Модель",c.title||"Моё авто"],["Год",c.year||""],["Двигатель",c.engine||""],["Описание",c.spec||""]].filter(r=>r[1])}
+function infoFromMeta(){
+  let c={};
+  try{const m=loadSetupMeta();if(m&&m.car)c=m.car;else if(META0&&META0.car)c=META0.car}catch(e){if(META0&&META0.car)c=META0.car}
+  return [
+    ["Модель",c.title||"Моё авто"],
+    ["Год",c.year||""],
+    ["Двигатель",c.engine||""],
+    ["VIN",c.vin||""],
+    ["Гос. номер",c.plate||""],
+    ["Масло",c.oil||""],
+    ["Цвет",c.color||""],
+    ["Описание",c.spec||""]
+  ];
+}
 const IMGS=[];
 const L="#fff6e0",L2="#ffe6b0",A="#ffb347",A2="#ff8a00",R="#ff3b30",R2="#a80f08";
 const NODES={
@@ -686,10 +716,20 @@ const stripPh=(k,v)=>k==="photo"?undefined:v;
 function writeIdb(){clearTimeout(idbT);idbT=null;try{const js=JSON.stringify(S);idbPut("state",SKEY,{ts:S.ts,json:js}).then(()=>{warnIDB=false}).catch(()=>{if(!warnIDB){warnIDB=true;toast("Запасная память браузера недоступна. Скачай копию во вкладке «Авто»")}})}catch(e){}}
 function maybeSnap(){if(Date.now()-lastSnap>20*60*1000){lastSnap=Date.now();takeSnapshot("авто")}}
 function askPersist(){if(persistAsked)return;persistAsked=true;try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().then(()=>{try{renderSafety()}catch(e){}}).catch(()=>{})}catch(e){}}
-const save=()=>{S.ts=Date.now();S.v=2;let okLS=true;try{localStorage.setItem(SKEY,JSON.stringify(S,stripPh));warnLS=false}catch(e){okLS=false}
- clearTimeout(idbT);idbT=setTimeout(writeIdb,300);maybeSnap();askPersist();
- if(!okLS&&!warnLS){warnLS=true;toast("Основная память браузера не приняла запись. Данные пишутся в запасную. Скачай копию")}
- if(dbDoc){clearTimeout(tmr);tmr=setTimeout(()=>{const js=JSON.stringify(S,stripPh);dbDoc.set({s:js}).then(()=>{warnDB=false}).catch(()=>{if(!warnDB){warnDB=true;toast("Синхронизация не удалась, данные пока только на этом устройстве")}})},500)}};
+const save=()=>{
+  S.ts=Date.now();S.v=2;notes=S.notes;
+  let okLS=true;
+  try{
+    const payload=JSON.stringify(S,stripPh);
+    localStorage.setItem(SKEY,payload);
+    if(!localStorage.getItem(SKEY))okLS=false;
+    warnLS=false;
+  }catch(e){okLS=false}
+  clearTimeout(idbT);idbT=setTimeout(writeIdb,200);
+  maybeSnap();askPersist();
+  if(!okLS){warnLS=true;toast("Не удалось сохранить. Скачай копию во вкладке «Авто»")}
+  if(dbDoc){clearTimeout(tmr);tmr=setTimeout(()=>{const js=JSON.stringify(S,stripPh);dbDoc.set({s:js}).then(()=>{warnDB=false}).catch(()=>{if(!warnDB){warnDB=true;toast("Синхронизация не удалась, данные пока только на этом устройстве")}})},500)}
+};
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&idbT)writeIdb()});addEventListener("pagehide",()=>{if(idbT)writeIdb()});
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"),fd=s=>s.split("-").reverse().join(".");
 function rebuild(){const ad=S.added.map(x=>x.d||isNaN(+x.id.slice(1))?x:{...x,d:iso(new Date(+x.id.slice(1)))}).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:a.id<b.id?-1:1);D=BASE.filter(x=>!S.removed.includes(x.id)).concat(ad).map(x=>{let o={...x};if(S.edits[x.id])o={...o,...S.edits[x.id]};if(S.over[x.id])o.c=S.over[x.id];return o})}
@@ -923,7 +963,7 @@ function parseDate(s){let t=norm(s);const d=new Date();d.setHours(12,0,0,0);let 
  else if((m=t.match(new RegExp("(\\d{1,2})\\s+("+Object.keys(MON).join("|")+")(?:\\s+(\\d{4}))?")))){d.setMonth(MON[m[2]],+m[1]);if(m[3])d.setFullYear(+m[3]);else if(d>new Date())d.setFullYear(ny-1);f=true;t=t.replace(m[0]," ")}
  else if((m=t.match(/(\d{1,2})\.(\d{2})(?:\.(\d{2,4}))?(?!\d|\s*(?:к(?![а-я])|тыс))/))&&+m[2]>=1&&+m[2]<=12&&+m[1]>=1&&+m[1]<=31){d.setMonth(+m[2]-1,+m[1]);if(m[3])d.setFullYear(m[3].length===2?2000+(+m[3]):+m[3]);else if(d>new Date())d.setFullYear(ny-1);f=true;t=t.replace(m[0]," ")}
  return{iso:iso(d),rest:t,found:f}}
-const INFO=CUSTOM?infoFromMeta():[["Модель","—"],["Год","—"]];
+const INFO=[["Модель","—"],["Год","—"],["Двигатель",""],["VIN",""],["Гос. номер",""],["Масло",""],["Цвет",""],["Описание",""]];
 const CPI='<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg>';
 
 function renderMileage(){
@@ -1064,8 +1104,46 @@ function applyMileageToSpec(){
   sp.textContent=sp.dataset.base+" · пробег "+fmt(S.mileage)+" км";
 }
 
-function renderInfo(){const row=(l,v,x)=>'<div class="ic"><button class="ir" data-v="'+esc(v).replace(/"/g,"&quot;")+'" data-l="'+esc(l).replace(/"/g,"&quot;")+'"><span>'+esc(l)+'</span><b>'+esc(v)+'</b><i>'+CPI+'</i></button>'+(x?'<button class="x" data-x="'+x+'" aria-label="Удалить">×</button>':"")+'</div>';
- $("#info").innerHTML=INFO.map(r=>row(r[0],r[1])).join("")+S.info.map(r=>row(r.l,r.v,r.id)).join("")}
+
+function fillCarEditor(){
+  let c={};try{const m=loadSetupMeta();if(m&&m.car)c=m.car}catch(e){}
+  const set=(id,v)=>{const el=$(id);if(el)el.value=v||""};
+  set("#ceTitle",c.title);set("#ceYear",c.year);set("#ceEngine",c.engine);
+  set("#ceVin",c.vin);set("#cePlate",c.plate);set("#ceOil",c.oil);set("#ceColor",c.color);set("#ceSpec",c.spec);
+}
+function saveCarEditor(){
+  const meta=loadSetupMeta()||{done:true,demo:false,scenes:[],at:Date.now()};
+  meta.car={
+    title:($("#ceTitle")&&$("#ceTitle").value.trim())||"Моё авто",
+    year:($("#ceYear")&&$("#ceYear").value.trim())||"",
+    engine:($("#ceEngine")&&$("#ceEngine").value.trim())||"",
+    vin:($("#ceVin")&&$("#ceVin").value.trim())||"",
+    plate:($("#cePlate")&&$("#cePlate").value.trim())||"",
+    oil:($("#ceOil")&&$("#ceOil").value.trim())||"",
+    color:($("#ceColor")&&$("#ceColor").value.trim())||"",
+    spec:($("#ceSpec")&&$("#ceSpec").value.trim())||""
+  };
+  meta.done=true;
+  saveSetupMeta(meta);
+  try{
+    const h1=document.querySelector("header h1");if(h1)h1.textContent=meta.car.title;
+    const sp=document.querySelector(".spec");if(sp){sp.textContent=[meta.car.year,meta.car.engine,meta.car.spec].filter(Boolean).join(", ")||"Данные машины";delete sp.dataset.base}
+    const lg=document.querySelector(".lg");if(lg)lg.textContent=(meta.car.title||"Авто").slice(0,14);
+    document.title=meta.car.title+" — журнал";
+  }catch(e){}
+  renderInfo();
+  toast("Данные сохранены");
+}
+(function bindCarEditor(){const b=$("#ceSave");if(b)b.onclick=()=>saveCarEditor()})();
+
+function renderInfo(){
+  const row=(l,v,x)=>{
+    const empty=!String(v||"").trim();
+    return '<div class="ic'+(empty?' ic-empty':'')+'"><button class="ir" data-v="'+esc(v||"").replace(/"/g,"&quot;")+'" data-l="'+esc(l).replace(/"/g,"&quot;")+'"><span>'+esc(l)+'</span><b>'+(empty?'<em class="ph">не указано</em>':esc(v))+'</b><i>'+CPI+'</i></button>'+(x?'<button class="x" data-x="'+x+'" aria-label="Удалить">×</button>':"")+'</div>';
+  };
+  const base=infoFromMeta();
+  $("#info").innerHTML=base.map(r=>row(r[0],r[1])).join("")+(S.info||[]).map(r=>row(r.l,r.v,r.id)).join("");
+}
 async function cp(v,l){let ok=false;try{await navigator.clipboard.writeText(v);ok=true}catch(e){try{const a=document.createElement("textarea");a.value=v;a.style.cssText="position:fixed;top:0;opacity:0";document.body.appendChild(a);a.select();ok=document.execCommand("copy");a.remove()}catch(x){}}toast(ok?"Скопировано: "+l:"Не удалось скопировать")}
 $("#info").onclick=e=>{const x=e.target.closest(".x"),b=e.target.closest(".ir");if(x){S.info=S.info.filter(r=>r.id!==x.dataset.x);save();renderInfo();return}if(b){cp(b.dataset.v,b.dataset.l);b.classList.add("ok");setTimeout(()=>b.classList.remove("ok"),900)}};
 $("#fadd").onclick=()=>{const l=$("#fl").value.trim(),v=$("#fv").value.trim();if(!l||!v)return;S.info.push({id:"f"+Date.now(),l:l,v:v});save();$("#fl").value="";$("#fv").value="";renderInfo()};
@@ -1078,7 +1156,7 @@ if($("#carsList"))$("#carsList").onclick=e=>{const b=e.target.closest("[data-car
 if($("#carAdd"))$("#carAdd").onclick=()=>{const id="c"+Date.now().toString(36),a=getCars();if(!a.some(c=>c.id===CAR))a.push({id:CAR,t:"Основная"});a.push({id,t:"Новая машина"});saveCars(a);try{localStorage.setItem(ACT_KEY,id)}catch(x){}location.reload()};
 renderCars();
 let tab="home",last=0;
-$("#nav").onclick=e=>{const b=e.target.closest("button[data-t]");if(!b)return;tab=b.dataset.t;[...$("#nav").querySelectorAll("button")].forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("on",s.id==="t-"+tab));if(tab==="stats"){renderMoBar();stats()}if(tab==="list")list();if(tab==="car"){renderInfo();renderMileage();renderCars();renderSafety();try{renderSceneEditor()}catch(e){}}scrollTo(0,0)};
+$("#nav").onclick=e=>{const b=e.target.closest("button[data-t]");if(!b)return;tab=b.dataset.t;[...$("#nav").querySelectorAll("button")].forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("on",s.id==="t-"+tab));if(tab==="stats"){renderMoBar();stats()}if(tab==="list")list();if(tab==="car"){renderInfo();fillCarEditor();renderMileage();renderCars();renderSafety();try{renderSceneEditor()}catch(e){}}scrollTo(0,0)};
 $("#t-home").addEventListener("pointerdown",()=>last=Date.now());
 setInterval(()=>{if(tab==="home"&&!zoomed&&SCENES.length&&Date.now()-last>15000)show((cur+1)%SCENES.length)},7000);
 
@@ -1155,9 +1233,25 @@ function showSetupStep(){
   $("#suFile").onchange=async()=>{const f=$("#suFile").files[0];$("#suFile").value="";if(!f)return;try{await applyFullBackup(JSON.parse(await f.text()));toast("Восстановлено");setTimeout(()=>location.reload(),400)}catch(e){toast("Нужна копия журнала (.json)")}};
  }else if(setup.step===1){
   const c=setup.car;
-  body.innerHTML='<h1>Авто</h1><p class="sm">Данные можно позже изменить во вкладке «Авто».</p><div class="su-card"><input class="srch" id="suTitle" placeholder="Марка и модель" value="'+esc(c.title||'')+'"><div class="su-grid"><input class="srch" id="suYear" placeholder="Год" value="'+esc(c.year||'')+'"><input class="srch" id="suEngine" placeholder="Двигатель" value="'+esc(c.engine||'')+'"></div><input class="srch" id="suSpec" placeholder="КПП, привод…" value="'+esc(c.spec||'')+'"></div><div class="su-actions"><button class="gh" id="suBack">Назад</button><button class="btn" id="suNext">Далее</button></div>';
+  body.innerHTML='<h1>Авто</h1><p class="sm">VIN и номер можно оставить пустыми. Масло и цвет — по желанию. Позже всё правится во вкладке «Авто».</p><div class="su-card">'+
+    '<input class="srch" id="suTitle" placeholder="Марка и модель" value="'+esc(c.title||'')+'">'+
+    '<div class="su-grid"><input class="srch" id="suYear" placeholder="Год" value="'+esc(c.year||'')+'"><input class="srch" id="suEngine" placeholder="Двигатель" value="'+esc(c.engine||'')+'"></div>'+
+    '<input class="srch" id="suVin" placeholder="VIN" value="'+esc(c.vin||'')+'">'+
+    '<input class="srch" id="suPlate" placeholder="Гос. номер" value="'+esc(c.plate||'')+'">'+
+    '<div class="su-grid"><input class="srch" id="suOil" placeholder="Масло (необязательно)" value="'+esc(c.oil||'')+'"><input class="srch" id="suColor" placeholder="Цвет (необязательно)" value="'+esc(c.color||'')+'"></div>'+
+    '<input class="srch" id="suSpec" placeholder="КПП, привод…" value="'+esc(c.spec||'')+'">'+
+    '</div><div class="su-actions"><button class="gh" id="suBack">Назад</button><button class="btn" id="suNext">Далее</button></div>';
   $("#suBack").onclick=()=>{setup.step=0;showSetupStep()};
-  $("#suNext").onclick=()=>{setup.car={title:$("#suTitle").value.trim()||"Моё авто",year:$("#suYear").value.trim(),engine:$("#suEngine").value.trim(),spec:$("#suSpec").value.trim()};setup.step=2;showSetupStep()};
+  $("#suNext").onclick=()=>{setup.car={
+    title:$("#suTitle").value.trim()||"Моё авто",
+    year:$("#suYear").value.trim(),
+    engine:$("#suEngine").value.trim(),
+    vin:$("#suVin").value.trim(),
+    plate:$("#suPlate").value.trim(),
+    oil:$("#suOil").value.trim(),
+    color:$("#suColor").value.trim(),
+    spec:$("#suSpec").value.trim()
+  };setup.step=2;showSetupStep()};
  }else if(setup.step===2){
   body.innerHTML='<h1>Фото</h1><p class="sm">Обязательно: спереди, сзади, сбоку, моторный отсек.</p><div class="su-grid" id="suGrid"></div><div class="su-actions"><button class="gh" id="suBack">Назад</button><button class="btn" id="suNext">Далее — узлы</button></div>';
   const grid=$("#suGrid");
@@ -1388,6 +1482,7 @@ async function replaceScenePhoto(sceneId,file){
   try{
     const url=await compressImg(file);
     await idbSet(sc.key,url);
+    const chk=await idbGet(sc.key);if(!chk)throw new Error("idb");
     saveSetupMeta(meta);
     await applyMetaToRuntime(meta);
     renderSceneEditor();
@@ -1451,8 +1546,21 @@ async function addScenePhoto(file){
 
 async function finishCustomSetup(){
  const scenes=[];
- for(const s of SCENE_SLOTS){const d=setup.slots[s.id];if(!d||!d.img)continue;const key="scene_"+s.id+SFX;try{await idbSet(key,d.img)}catch(e){}scenes.push({id:s.id,t:s.t,key,nodes:d.nodes})}
- const meta={done:true,demo:false,at:Date.now(),car:setup.car,scenes};
+ for(const s of SCENE_SLOTS){
+  const d=setup.slots[s.id];if(!d||!d.img)continue;
+  const key="scene_"+s.id+SFX;
+  try{
+    await idbSet(key,d.img);
+    const check=await idbGet(key);
+    if(!check)throw new Error("empty");
+  }catch(e){
+    console.warn("photo idb",s.id,e);
+    toast("Фото «"+s.t+"» не записалось в память браузера");
+  }
+  scenes.push({id:s.id,t:s.t,key,nodes:d.nodes||[]});
+ }
+ if(!scenes.length){toast("Нужно хотя бы одно фото");return}
+ const meta={done:true,demo:false,at:Date.now(),car:setup.car||{},scenes};
  saveSetupMeta(meta);
  {const cs=getCars(),c=cs.find(x=>x.id===CAR),t=setup.car.title;if(c)c.t=t;else cs.push({id:CAR,t});saveCars(cs)}
  try{const payload=await makeBackupPayload();payload.setup=meta;const images={};for(const s of scenes){images[s.key]=setup.slots[s.id].img}payload.images=images;
@@ -1466,8 +1574,18 @@ async function hydrateCustomFromSetup(){
  const meta=loadSetupMeta();
  if(!meta||!meta.done||meta.demo||!meta.scenes||!meta.scenes.length)return false;
  const imgs=[],scenes=[];
- for(const sc of meta.scenes){let url=null;try{url=await idbGet(sc.key)}catch(e){}if(!url)continue;imgs.push(url);scenes.push({t:sc.t,h:(sc.nodes||[]).map(n=>({n:n.n,x:n.x,y:n.y,z:2.4,dx:36,dy:-42}))})}
- if(!imgs.length)return false;
+ let missing=0;
+ for(const sc of meta.scenes){
+  let url=null;try{url=await idbGet(sc.key)}catch(e){console.warn(e)}
+  if(!url){missing++;continue}
+  imgs.push(url);
+  scenes.push({t:sc.t,h:(sc.nodes||[]).map(n=>({n:n.n,x:n.x,y:n.y,z:2.4,dx:36,dy:-42}))});
+ }
+ if(!imgs.length){
+  setTimeout(()=>toast("Фото не найдены в памяти. Добавь снова: Авто → Фото и узлы"),600);
+  return false;
+ }
+ if(missing)setTimeout(()=>toast("Часть фото пропала — добавь во вкладке «Авто»"),700);
  IMGS.length=0;imgs.forEach(u=>IMGS.push(u));
  NODE_PALETTE.forEach(p=>{NODES[p.n]={t:p.t,s:"",w:[]}});
  document.title=((meta.car&&meta.car.title)||"Моё авто")+" — журнал";
@@ -1536,7 +1654,7 @@ function goTab(name){
   try{
     if(name==="stats"){renderMoBar();stats()}
     if(name==="list")list();
-    if(name==="car"){renderInfo();renderMileage();renderCars();renderSafety();renderSceneEditor()}
+    if(name==="car"){renderInfo();fillCarEditor();renderMileage();renderCars();renderSafety();renderSceneEditor()}
     if(name==="plan")renderNotes();
   }catch(e){}
 }
@@ -1710,7 +1828,7 @@ function ensureStageEmptyState(){
 
 function startAppBoot(){
   const im=new Image();im.src=(IMGS[0]||"");
-  const go=()=>{document.body.classList.add("rd");try{applyMileageToSpec()}catch(e){}try{ensureStageEmptyState()}catch(e){}
+  const go=()=>{document.body.classList.add("rd");try{applyMileageToSpec()}catch(e){}try{ensureStageEmptyState()}catch(e){}try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
     setTimeout(()=>{
       if(!guideSeen()){showGuide();return}
       showWelcome();
