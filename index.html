@@ -408,9 +408,103 @@ body.rd .thumbs,body.rd .panel.intro{animation:rise 1.2s .7s cubic-bezier(.2,.8,
 #edOverlay h1{font:300 32px/1.1 "Cormorant Garamond",Georgia,serif;margin:8px 0 6px}
 
 .ic-empty b em.ph{font-style:normal;font-weight:400;color:var(--mut);opacity:.8}
-#carEditCard .ce-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:500px){#carEditCard .ce-grid{grid-template-columns:1fr}}
-#carEditCard .ce-grid .full{grid-column:1/-1}
+#carEditCard .ce-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+#carEditCard .ce-head h3{margin:0}
+#carEditCard .ce-edit-btn{all:unset;cursor:pointer;font:500 13px Manrope,sans-serif;color:var(--ac);padding:6px 12px;border-radius:99px;border:1px solid rgba(157,184,255,.35);background:rgba(157,184,255,.08)}
+#carEditCard .ce-edit-btn:active{opacity:.7}
+#carEditCard .ce-view .ic{border-color:var(--line)}
+/* compact edit sheet */
+#ceSheet{position:fixed;inset:0;z-index:300;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+#ceSheet.on{display:flex}
+#ceSheet .ce-sheet{width:min(440px,100%);max-height:min(86svh,640px);display:flex;flex-direction:column;border-radius:18px 18px 0 0;background:#161a24;color:#eef1f6;border:1px solid rgba(255,255,255,.14);border-bottom:0;box-shadow:0 -20px 60px rgba(0,0,0,.55);overflow:hidden;pointer-events:auto}
+#ceSheet .ce-sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0}
+#ceSheet .ce-sheet-h strong{font:600 16px/1.2 Manrope,sans-serif;color:#eef1f6}
+#ceSheet .ce-sheet-x{all:unset;cursor:pointer;width:36px;height:36px;display:grid;place-items:center;border-radius:10px;color:#aeb6c6;font-size:22px;line-height:1;pointer-events:auto}
+#ceSheet .ce-sheet-x:active{background:rgba(255,255,255,.08)}
+#ceSheet .ce-sheet-b{flex:1 1 auto;overflow-y:auto;padding:12px 16px 16px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;pointer-events:auto}
+#ceSheet .ce-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 10px}
+#ceSheet .ce-grid .full{grid-column:1/-1}
+#ceSheet .ce-lab{display:block;font:600 11px/1 Manrope,sans-serif;color:#9aa3b5;margin:0 0 6px;letter-spacing:.04em;text-transform:uppercase}
+#ceSheet .ce-grid input.srch,
+#ceSheet .ce-grid .srch{
+  display:block;width:100%;box-sizing:border-box;
+  padding:12px 12px;font:400 15px/1.3 Manrope,-apple-system,sans-serif;
+  color:#eef1f6!important;background:#0e1219!important;
+  border:1px solid rgba(255,255,255,.16)!important;border-radius:12px;
+  outline:none;-webkit-appearance:none;appearance:none;
+  pointer-events:auto;touch-action:manipulation;
+  opacity:1!important;-webkit-text-fill-color:#eef1f6!important;
+}
+#ceSheet .ce-grid input.srch::placeholder{color:#6d7689!important;opacity:1;-webkit-text-fill-color:#6d7689}
+#ceSheet .ce-grid input.srch:focus{border-color:#9db8ff!important;box-shadow:0 0 0 3px rgba(157,184,255,.2)}
+#ceSheet .ce-sheet-f{flex-shrink:0;display:flex;gap:8px;padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid rgba(255,255,255,.1);background:#161a24;pointer-events:auto!important;position:relative;z-index:5}
+#ceSheet .ce-btn{
+  flex:1;text-align:center;padding:10px 14px;min-height:40px;
+  font:600 13px/1.2 Manrope,sans-serif;letter-spacing:.01em;
+  border-radius:999px;cursor:pointer;pointer-events:auto!important;
+  -webkit-user-select:none;user-select:none;-webkit-appearance:none;appearance:none;
+  touch-action:manipulation;border:none;position:relative;z-index:6;
+}
+#ceSheet .ce-btn-p{
+  background:linear-gradient(135deg,#8eb0ff 0%,#b6ccff 100%);
+  color:#0b0e14;box-shadow:0 4px 14px rgba(142,176,255,.28);
+}
+#ceSheet .ce-btn-g{
+  background:rgba(255,255,255,.05);
+  color:#c5cddc;border:1px solid rgba(255,255,255,.12)!important;
+}
+#ceSheet .ce-btn-p:active{transform:scale(.98);filter:brightness(.96)}
+#ceSheet .ce-btn-g:active{transform:scale(.98);background:rgba(255,255,255,.09)}
+#ceSheet .ce-sheet-x{
+  all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;
+  border-radius:50%;color:#9aa3b5;font-size:18px;line-height:1;
+  pointer-events:auto!important;touch-action:manipulation;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+}
+#ceSheet .ce-sheet-x:active{background:rgba(255,255,255,.12)}
+
+#ceSheet .ce-grid select.ce-sel{
+  display:block;width:100%;box-sizing:border-box;
+  padding:12px 36px 12px 12px;font:400 15px/1.3 Manrope,-apple-system,sans-serif;
+  color:#eef1f6!important;background:#0e1219!important;
+  border:1px solid rgba(255,255,255,.16)!important;border-radius:12px;
+  outline:none;-webkit-appearance:none;appearance:none;
+  pointer-events:auto;touch-action:manipulation;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%9aa3b5' d='M1 1l5 5 5-5'/%3E%3C/svg%3E")!important;
+  background-repeat:no-repeat!important;background-position:right 12px center!important;
+  background-color:#0e1219!important;
+}
+#ceSheet .ce-grid select.ce-sel:focus{border-color:#9db8ff!important;box-shadow:0 0 0 3px rgba(157,184,255,.2)}
+#ceSheet .ce-grid select.ce-sel option{background:#161a24;color:#eef1f6}
+
+
+
+@media(min-width:700px){
+  #ceSheet{align-items:center;padding:24px}
+  #ceSheet .ce-sheet{border-radius:18px;border:1px solid rgba(255,255,255,.14);max-height:min(80vh,580px)}
+}
+
+}
+@media(min-width:700px){
+  #ceSheet{align-items:center;padding:24px}
+  #ceSheet .ce-sheet{border-radius:20px;border-bottom:1px solid var(--line);max-height:min(80vh,560px)}
+  #ceSheet .ce-sheet-f{padding-bottom:12px}
+}
+
+.kind-seg{display:flex;gap:6px;width:100%;flex-wrap:wrap}
+.kind-seg button{flex:1;min-width:calc(33% - 6px);text-align:center;padding:10px 8px;font-size:12.5px;border-radius:12px;line-height:1.25}
+.work-box{margin-top:12px;padding:12px;border-radius:14px;border:1px solid rgba(157,184,255,.22);background:rgba(157,184,255,.06)}
+.work-box-t{font:600 12px Manrope,sans-serif;color:var(--ac2);margin:0 0 8px;letter-spacing:.02em}
+.work-box[hidden]{display:none!important}
+#dcatBlock[hidden],#dj[hidden]{display:none!important}
+
+.exp-hint{font:500 13px/1.4 Manrope,sans-serif;color:var(--mut);margin:0 0 10px}
+.exp-check{display:flex;align-items:center;gap:10px;margin:14px 0 0;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);font:500 13.5px/1.3 Manrope,sans-serif;color:var(--tx);cursor:pointer;-webkit-user-select:none;user-select:none}
+.exp-check input{width:18px;height:18px;accent-color:var(--ac);flex-shrink:0}
+.exp-check[hidden]{display:none!important}
+.work-box{margin-top:10px;padding:12px;border-radius:14px;border:1px solid rgba(157,184,255,.25);background:rgba(157,184,255,.07)}
+.work-box[hidden]{display:none!important}
+#dcatBlock[hidden],#dj[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -458,21 +552,35 @@ body.rd .thumbs,body.rd .panel.intro{animation:rise 1.2s .7s cubic-bezier(.2,.8,
 <div class="row2"><div class="card"><h3>Самые крупные траты</h3><div class="top" id="top"></div></div>
 <div class="card"><h3>Обслуживание по пробегу, км</h3><div class="tl" id="tl"></div></div></div></div></section>
 <section class="tab" id="t-list"><div class="pg"><h2 class="pt">Список</h2><div class="sub">Все записи — можно править недавние и менять категорию</div>
-<div class="card"><h3>Новая запись</h3><div class="ad"><input class="srch" id="nx" placeholder="Название и сумма, напр. масло 2800"><div class="mic-wrap"><div class="mic-tip" id="micTip">Удерживай · вверх — до <b>1 мин</b></div><button class="mic" id="mic" aria-label="Голосовой ввод"><span class="mic-ring"></span><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div><button class="btn" id="nb">Дальше</button></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px"><button class="gh" id="nw" style="border:1px solid var(--glb);border-radius:99px;padding:8px 14px">+ Работа мастера</button></div>
-<div id="vs" style="min-height:18px;line-height:1.4">Микрофон: название и сумма. Категорию можно поправить перед сохранением.</div>
+<div class="card"><h3>Новая запись</h3>
+<div class="ad"><input class="srch" id="nx" placeholder="Название"><div class="mic-wrap"><div class="mic-tip" id="micTip">Удерживай · вверх — до <b>1 мин</b></div><button class="mic" id="mic" aria-label="Голосовой ввод"><span class="mic-ring"></span><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div><button class="btn" id="nb">Дальше</button></div>
+<div id="vs" class="sm" style="min-height:0;margin:6px 0 0;line-height:1.35;color:var(--mut)">Можно сразу: «масло 2800»</div>
 <div class="dr" id="dr" hidden>
+<div class="exp-hint" id="dh">Что купил или за что заплатил</div>
 <input class="srch" id="dn" placeholder="Название">
-<div class="dg2"><input class="srch" id="da" inputmode="numeric" placeholder="Сумма · 0 если бесплатно"><input class="srch" id="dd" type="date"></div>
-<div class="seg" id="dk" style="margin-top:12px;width:100%;justify-content:stretch"><button type="button" data-k="p" class="on" style="flex:1;text-align:center">Запчасть / расходник</button><button type="button" data-k="w" style="flex:1;text-align:center">Работа мастера</button></div>
-<div id="dcatBlock"><label class="sm" style="display:block;margin:12px 0 4px;color:var(--mut)">Узел / категория</label>
+<div class="dg2"><input class="srch" id="da" inputmode="numeric" placeholder="Сумма, ₽"><input class="srch" id="dd" type="date"></div>
+
+<label class="exp-check" id="onlyWorkLab"><input type="checkbox" id="dOnlyWork"> Это только работа мастера</label>
+
+<div id="dcatBlock"><label class="sm" style="display:block;margin:12px 0 4px;color:var(--mut)">Узел</label>
 <select class="srch" id="dc" style="margin:0"></select></div>
-<div id="dj"><label class="sm" style="display:block;margin:12px 0 4px;color:var(--mut)">Привязать к уже созданной работе</label><select class="srch" id="dwj" style="margin:0"></select></div>
-<div id="dnewWork"><label class="sm" style="display:block;margin:12px 0 4px;color:var(--mut)">Или сразу добавить работу мастера</label>
-<input class="srch" id="dwn" placeholder="Название работы (можно пусто)" style="margin:0 0 8px">
-<input class="srch" id="dwa" inputmode="numeric" placeholder="Сумма работы · 0 если бесплатно" style="margin:0"></div>
+
+<label class="exp-check" id="addWorkLab"><input type="checkbox" id="dAddWork"> Была ещё работа мастера</label>
+<div id="dnewWork" class="work-box" hidden>
+  <input class="srch" id="dwn" placeholder="Что делал мастер (необязательно)" style="margin:0 0 8px">
+  <input class="srch" id="dwa" inputmode="numeric" placeholder="Сколько взял за работу, ₽" style="margin:0">
+</div>
+
+<div id="dj" hidden><label class="sm" style="display:block;margin:12px 0 4px;color:var(--mut)">Привязать к работе</label><select class="srch" id="dwj" style="margin:0"></select></div>
+
+<!-- legacy kind control kept hidden for old JS paths -->
+<div class="seg kind-seg" id="dk" hidden>
+  <button type="button" data-k="p" class="on">Запчасть</button>
+  <button type="button" data-k="w">Работа</button>
+  <button type="button" data-k="both">Запчасть + работа</button>
+</div>
 <div id="dcw" hidden><label class="sm" style="display:block;margin:12px 0 4px;color:var(--mut)">Какие узлы затронуты (необязательно)</label><div class="chs" id="dcs"></div></div>
-<div class="sm" id="dh" style="margin-top:10px;line-height:1.45"></div>
+
 <div style="margin-top:14px"><button class="btn" id="dsave">Сохранить</button><button class="gh" id="dx">Отмена</button></div>
 </div></div>
 <input class="srch" id="q" placeholder="Поиск по названию"><div class="chs" id="chs"></div><div id="rows"></div><div class="tot" id="tot"></div></div></section>
@@ -487,25 +595,58 @@ body.rd .thumbs,body.rd .panel.intro{animation:rise 1.2s .7s cubic-bezier(.2,.8,
 <section class="tab" id="t-car"><div class="pg"><h2 class="pt">Авто</h2><div class="sub">Нажми на значение, и оно скопируется</div>
 <div class="card"><div id="info"></div></div>
 <div class="card"><h3>Своё поле</h3><div class="dg2"><input class="srch" id="fl" placeholder="Название"><input class="srch" id="fv" placeholder="Значение"></div><button class="btn" id="fadd" style="margin-top:12px">Добавить</button></div>
-<div class="card" id="carEditCard"><h3>Паспорт машины</h3><div class="sm" style="margin-bottom:12px">VIN и номер можно оставить пустыми. Масло и цвет — по желанию.</div>
-<div class="ce-grid">
-<input class="srch full" id="ceTitle" placeholder="Марка и модель">
-<input class="srch" id="ceYear" placeholder="Год">
-<input class="srch" id="ceEngine" placeholder="Двигатель">
-<input class="srch full" id="ceVin" placeholder="VIN">
-<input class="srch full" id="cePlate" placeholder="Гос. номер">
-<input class="srch" id="ceOil" placeholder="Масло (необязательно)">
-<input class="srch" id="ceColor" placeholder="Цвет (необязательно)">
-<input class="srch full" id="ceSpec" placeholder="КПП, привод…">
+<div class="card" id="carEditCard">
+<div class="ce-head"><h3>Паспорт машины</h3><button type="button" class="ce-edit-btn" id="ceToggle">Изменить</button></div>
+<div class="sm" style="margin-bottom:10px">Нажми на строку — скопировать</div>
+<div class="ce-view" id="ceView"></div>
 </div>
-<button class="btn" id="ceSave" style="margin-top:12px">Сохранить данные</button>
-</div>
+
 <div class="card" id="photoCard"><h3>Фото и узлы</h3><div class="sm" style="margin-bottom:12px">Замени фото, добавь ракурс или расставь точки заново</div><div id="sceneEditList"></div><div class="exp-row" style="margin-top:12px"><button class="btn" id="addScenePhoto">+ Фото</button><input type="file" id="addSceneFile" accept="image/*" hidden></div></div>
 <div class="card" id="safeCard" style="margin-top:24px"><h3>Данные</h3><div class="sm" id="safeSt" style="line-height:1.55"></div><div class="exp-row" style="margin-top:12px"><button class="btn" id="safeBak">Скачать копию</button><button class="gh" id="safePers">Защитить хранилище</button><button class="gh" id="exBak" hidden>Копия</button><button class="gh" id="imBak">Восстановить из файла</button><button class="gh" id="guideReplay">Пройти гид</button><button class="gh" id="exCsv" hidden>CSV</button><button class="gh" id="exJson" hidden>JSON</button><input type="file" id="imFile" accept=".json,application/json" hidden></div></div>
 </div></section>
 <div id="edOverlay"><div class="ed-wrap"><div id="edBody"></div></div></div>
 </div></div>
 <div class="ts" id="ts"></div>
+<div id="ceSheet" aria-modal="true" role="dialog">
+  <div class="ce-sheet">
+    <div class="ce-sheet-h"><strong>Данные машины</strong><button type="button" class="ce-sheet-x" id="ceCancel" aria-label="Закрыть" onclick="window.__ceClose&&window.__ceClose(event)">×</button></div>
+    <div class="ce-sheet-b">
+      <div class="ce-grid">
+        <div class="full"><div class="ce-lab">Марка и модель</div><input class="srch" id="ceTitle" placeholder="Audi A4 B5" autocomplete="off"></div>
+        <div><div class="ce-lab">Год</div><input class="srch" id="ceYear" placeholder="1997" inputmode="numeric" autocomplete="off"></div>
+        <div><div class="ce-lab">Силы</div><input class="srch" id="cePower" placeholder="125" inputmode="numeric" autocomplete="off"></div>
+        <div><div class="ce-lab">Двигатель</div><input class="srch" id="ceEngine" placeholder="1.8 ADR" autocomplete="off"></div>
+        <div><div class="ce-lab">КПП</div>
+          <select class="srch ce-sel" id="ceGear">
+            <option value="">Не указано</option>
+            <option value="МКПП">МКПП</option>
+            <option value="АКПП">АКПП</option>
+            <option value="CVT">CVT</option>
+            <option value="РКПП">РКПП</option>
+          </select>
+        </div>
+        <div><div class="ce-lab">Привод</div>
+          <select class="srch ce-sel" id="ceDrive">
+            <option value="">Не указано</option>
+            <option value="Передний">Передний</option>
+            <option value="Задний">Задний</option>
+            <option value="Полный">Полный</option>
+          </select>
+        </div>
+        <div class="full"><div class="ce-lab">VIN</div><input class="srch" id="ceVin" placeholder="Необязательно" autocomplete="off" spellcheck="false"></div>
+        <div class="full"><div class="ce-lab">Гос. номер</div><input class="srch" id="cePlate" placeholder="Необязательно" autocomplete="off" spellcheck="false"></div>
+        <div><div class="ce-lab">Масло</div><input class="srch" id="ceOil" placeholder="Необязательно" autocomplete="off"></div>
+        <div><div class="ce-lab">Цвет</div><input class="srch" id="ceColor" placeholder="Необязательно" autocomplete="off"></div>
+        <div class="full"><div class="ce-lab">Ещё</div><input class="srch" id="ceSpec" placeholder="Дорестайлинг…" autocomplete="off"></div>
+      </div>
+    </div>
+    <div class="ce-sheet-f">
+      <button type="button" class="ce-btn ce-btn-g" id="ceCancel2" onclick="window.__ceClose&&window.__ceClose(event)">Отмена</button>
+      <button type="button" class="ce-btn ce-btn-p" id="ceSave" onclick="window.__ceSave&&window.__ceSave(event)">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const TEMPLATE=true;
 /* Future cloud DB (e.g. Supabase) — fill when ready; local storage works offline until then */
@@ -519,18 +660,25 @@ const META0=(()=>{try{return JSON.parse(localStorage.getItem(SETUP_KEY)||"null")
 const CUSTOM=!!(META0&&META0.done&&!META0.demo);
 function getCars(){try{const a=JSON.parse(localStorage.getItem(CARS_KEY)||"null");if(Array.isArray(a)&&a.length)return a}catch(e){}return[{id:CAR,t:(META0&&META0.car&&META0.car.title)||"Основная"}]}
 function saveCars(a){try{localStorage.setItem(CARS_KEY,JSON.stringify(a))}catch(e){}}
-function infoFromMeta(){
+function getCarData(){
   let c={};
   try{const m=loadSetupMeta();if(m&&m.car)c=m.car;else if(META0&&META0.car)c=META0.car}catch(e){if(META0&&META0.car)c=META0.car}
+  return c||{};
+}
+function infoFromMeta(){
+  const c=getCarData();
+  const eng=[c.engine,c.power?c.power+(" л.с."):""].filter(Boolean).join(", ");
+  const drive=[c.gear,c.drive].filter(Boolean).join(", ");
   return [
     ["Модель",c.title||"Моё авто"],
     ["Год",c.year||""],
-    ["Двигатель",c.engine||""],
+    ["Двигатель",eng],
+    ["КПП / привод",drive],
     ["VIN",c.vin||""],
     ["Гос. номер",c.plate||""],
     ["Масло",c.oil||""],
     ["Цвет",c.color||""],
-    ["Описание",c.spec||""]
+    ["Ещё",c.spec||""]
   ];
 }
 const IMGS=[];
@@ -669,7 +817,13 @@ function stats(){
  $("#bars").innerHTML=kn.slice(0,5).map(c=>'<div class="bar"><div>'+CATS[c][0]+'<b>'+Math.round(bc[c]/tot*100)+'%</b></div><span><i data-w="'+bc[c]/(bc[kn[0]]||1)*100+'"></i></span></div>').join("");
  raf2(()=>document.querySelectorAll("#bars i").forEach(e=>e.style.width=e.dataset.w+"%"));
  $("#top").innerHTML=DD.slice().sort((a,b)=>b.a-a.a).slice(0,5).map(x=>'<div><span>'+esc(x.n)+'</span><small>'+CATS[x.c][0]+(x.m?", "+esc(x.m):"")+'</small><b>'+fmt(x.a)+'</b></div>').join("");
- if(MILES.length){const lo=MILES[0][0],hi=MILES[MILES.length-1][0]||lo+1;$("#tl").innerHTML=MILES.map(m=>{const p=(m[0]-lo)/Math.max(1,hi-lo)*100;return'<i style="left:'+p+'%"></i><span style="left:'+p+'%">'+fmt(m[0])+"<br>"+m[1]+'</span>'}).join("")}else if($("#tl"))$("#tl").innerHTML="";
+ {const tlEl=$("#tl"),tlCard=tlEl&&tlEl.closest(".card");
+ if(MILES.length){
+  const lo=MILES[0][0],hi=MILES[MILES.length-1][0]||lo+1;
+  tlEl.innerHTML=MILES.map(m=>{const p=(m[0]-lo)/Math.max(1,hi-lo)*100;return'<i style="left:'+p+'%"></i><span style="left:'+p+'%">'+fmt(m[0])+"<br>"+m[1]+'</span>'}).join("");
+  if(tlCard)tlCard.style.display="";
+ }else{if(tlEl)tlEl.innerHTML="";if(tlCard)tlCard.style.display="none"}
+}
 }
 const MONTH_MS=30*864e5;
 function itemTime(d){if(d.id&&d.id[0]==="u"){const t=+d.id.slice(1);if(t>1e12)return t}if(d.d){const t=Date.parse(d.d);if(!isNaN(t))return t+12*36e5}return 0}
@@ -713,7 +867,7 @@ try{const o=JSON.parse(localStorage.getItem(SKEY)||"null");if(o)S=Object.assign(
 let notes=S.notes;
 let warnLS=false,warnDB=false,warnIDB=false,idbT=null,lastSnap=0,persistAsked=false;
 const stripPh=(k,v)=>k==="photo"?undefined:v;
-function writeIdb(){clearTimeout(idbT);idbT=null;try{const js=JSON.stringify(S);idbPut("state",SKEY,{ts:S.ts,json:js}).then(()=>{warnIDB=false}).catch(()=>{if(!warnIDB){warnIDB=true;toast("Запасная память браузера недоступна. Скачай копию во вкладке «Авто»")}})}catch(e){}}
+function writeIdb(){clearTimeout(idbT);idbT=null;try{const js=JSON.stringify(S);idbPut("state",SKEY,{ts:S.ts,json:js}).then(()=>{warnIDB=false}).catch(()=>{if(!warnIDB){warnIDB=true;toast("Запасная память браузера недоступна. Скачай копию в «Авто»")}})}catch(e){}}
 function maybeSnap(){if(Date.now()-lastSnap>20*60*1000){lastSnap=Date.now();takeSnapshot("авто")}}
 function askPersist(){if(persistAsked)return;persistAsked=true;try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().then(()=>{try{renderSafety()}catch(e){}}).catch(()=>{})}catch(e){}}
 const save=()=>{
@@ -727,7 +881,7 @@ const save=()=>{
   }catch(e){okLS=false}
   clearTimeout(idbT);idbT=setTimeout(writeIdb,200);
   maybeSnap();askPersist();
-  if(!okLS){warnLS=true;toast("Не удалось сохранить. Скачай копию во вкладке «Авто»")}
+  if(!okLS){warnLS=true;toast("Не удалось сохранить. Скачай копию в «Авто»")}
   if(dbDoc){clearTimeout(tmr);tmr=setTimeout(()=>{const js=JSON.stringify(S,stripPh);dbDoc.set({s:js}).then(()=>{warnDB=false}).catch(()=>{if(!warnDB){warnDB=true;toast("Синхронизация не удалась, данные пока только на этом устройстве")}})},500)}
 };
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&idbT)writeIdb()});addEventListener("pagehide",()=>{if(idbT)writeIdb()});
@@ -762,12 +916,42 @@ $("#dc").innerHTML=OPT.replace(/<option value="wk">.*?<\/option>/,"");
 let dkind="p";
 const NODE_CATS=()=>Object.keys(CATS).filter(c=>!["wk","is","un"].includes(c));
 const hid=(el,v)=>{if(el)el.style.display=v?"none":""};
-function setKind(k){dkind=k==="w"?"w":"p";[...$("#dk").children].forEach(b=>b.classList.toggle("on",b.dataset.k===dkind));const w=dkind==="w";const cat=$("#dcatBlock");if(cat)cat.hidden=!!w;else{hid($("#dc"),w);const lb=$("#dc")&&$("#dc").previousElementSibling;hid(lb,w)}hid($("#dj"),w);hid($("#dnewWork"),w);$("#dcw").hidden=!w;if(w){$("#dh").textContent="Только оплата работы (можно 0 ₽). Запчасти — отдельными записями и привяжи к этой работе"}else if($("#dh")&&!$("#dh").textContent){$("#dh").textContent=""}}
+function setKind(k){
+  // k: p | w | both — синхронизируем с галочками
+  dkind=(k==="w"||k==="both")?k:"p";
+  const only=$("#dOnlyWork"), add=$("#dAddWork"), nw=$("#dnewWork"), cat=$("#dcatBlock");
+  const addLab=$("#addWorkLab"), onlyLab=$("#onlyWorkLab");
+  if(only)only.checked=(dkind==="w");
+  if(add)add.checked=(dkind==="both");
+  if(onlyLab)onlyLab.hidden=false;
+  if(addLab)addLab.hidden=(dkind==="w");
+  if(nw)nw.hidden=(dkind!=="both");
+  if(cat)cat.hidden=(dkind==="w");
+  hid($("#dj"), true); // привязку прячем — слишком сложно для новых
+  const cw=$("#dcw");if(cw)cw.hidden=(dkind!=="w");
+  const tip=$("#dh");
+  if(tip){
+    if(dkind==="w") tip.textContent="Оплата работы. Сумма может быть 0 ₽.";
+    else if(dkind==="both") tip.textContent="Деталь и работа мастера — сохранятся двумя строками.";
+    else tip.textContent="Что купил или за что заплатил";
+  }
+  const dk=$("#dk");
+  if(dk)[...dk.children].forEach(b=>b.classList.toggle("on",b.dataset.k===dkind));
+}
+function syncKindFromChecks(){
+  const only=$("#dOnlyWork"), add=$("#dAddWork");
+  if(only&&only.checked){if(add)add.checked=false;setKind("w");return}
+  if(add&&add.checked){setKind("both");return}
+  setKind("p");
+}
 function fillWorkSel(sel,self){const ws=D.filter(x=>x.w&&x.id!==self).sort((a,b)=>(b.d||"").localeCompare(a.d||"")||(b.id>a.id?1:-1)),el=$("#dwj");
  el.innerHTML='<option value="">— без работы —</option>'+ws.map(w=>'<option value="'+w.id+'">'+esc(w.n)+(w.d?" · "+fd(w.d):"")+" · "+fmt(w.a)+'</option>').join("");
  let v=sel;if(v==null){const lim=iso(new Date(Date.now()-2*864e5)),w=ws.find(x=>x.d&&x.d>=lim);v=w?w.id:""}el.value=v||""}
 function fillCsChips(sel){$("#dcs").innerHTML=NODE_CATS().map(c=>'<button type="button" data-c="'+c+'" class="'+((sel||[]).includes(c)?"on":"")+'">'+CATS[c][0]+'</button>').join("")}
 $("#dk").onclick=e=>{const b=e.target.closest("button");if(b)setKind(b.dataset.k)};
+$("#dOnlyWork")&&($("#dOnlyWork").onchange=()=>syncKindFromChecks());
+$("#dAddWork")&&($("#dAddWork").onchange=()=>syncKindFromChecks());
+
 $("#dcs").onclick=e=>{const b=e.target.closest("button");if(b)b.classList.toggle("on")};
 const pickedCs=()=>[...$("#dcs").querySelectorAll("button.on")].map(b=>b.dataset.c);
 const wfields=o=>{if(dkind==="w"){o.w=1;o.cs=pickedCs();delete o.j}else{delete o.w;delete o.cs;const j=$("#dwj").value;if(j)o.j=j;else delete o.j}return o};
@@ -789,19 +973,22 @@ function make(s,kind){s=s.trim();if(!s)return;if(/^работ[аы]?\s+/i.test(s
  if(pair){if($("#dwn"))$("#dwn").value=pair.workLabel+(n?": "+n:"");if($("#dwa"))$("#dwa").value=String(pair.workA);
   $("#dh").textContent="Разбито: запчасть "+fmt(pair.partA)+" ₽ и работа "+fmt(pair.workA)+" ₽ — можно поправить"}
  else $("#dh").textContent=c==="un"?"Категория не определена — выбери из списка ниже":"Определена: "+CATS[c][0]+". Можно сменить"+(a==null?". Сумма не найдена — впиши её":"");
- fillWorkSel(null);fillCsChips([]);setKind(kind||"p");
- if(kind==="w")$("#dh").textContent="Работа мастера: только сумма за труд (можно 0 ₽). Запчасти добавь отдельно и привяжи к этой работе";
+ fillWorkSel(null);fillCsChips([]);
+ const mode=kind==="w"?"w":(pair?"both":"p");
+ setKind(mode);
+ if(mode==="w")$("#dh").textContent="Оплата работы. Сумма может быть 0 ₽.";
+ else if(mode==="both")$("#dh").textContent="Разбито: запчасть и работа — можно поправить";
  if(a==null)$("#da").focus()}
 $("#nb").onclick=()=>make($("#nx").value);
-$("#nw").onclick=()=>{const v=$("#nx").value.trim();if(v)make(v,"w");else{editingId=null;draft={g:"wk"};$("#dr").hidden=false;$("#dd").value=iso(new Date());$("#dn").value="";$("#da").value="";$("#dh").textContent="Работа мастера: название и сумма только за труд (можно 0 ₽)";fillWorkSel(null);fillCsChips([]);setKind("w");$("#dn").focus()}};$("#nx").onkeydown=e=>{if(e.key==="Enter")make($("#nx").value)};
+/* +работа убрана: тип выбирается в форме */$("#nx").onkeydown=e=>{if(e.key==="Enter")make($("#nx").value)};
 $("#dx").onclick=()=>{setKind("p");$("#dr").hidden=true;draft=null;editingId=null;if($("#rcptPrev")){$("#rcptPrev").innerHTML="";delete $("#rcptPrev").dataset.url}};
 $("#dsave").onclick=()=>{
- const n=$("#dn").value.trim(),v=$("#da").value.trim(),a=Math.round(+String(v).replace(/\s/g,"")),c=dkind==="w"?"wk":$("#dc").value,dd=$("#dd").value||(editingId?"":iso(new Date()));
+ const n=$("#dn").value.trim(),v=$("#da").value.trim(),a=Math.round(+String(v).replace(/\s/g,"")),c=dkind==="w"?"wk":($("#dc")&&$("#dc").value)||"un",dd=$("#dd").value||(editingId?"":iso(new Date()));
  if(!n||v===""||Number.isNaN(a)||a<0){$("#dh").textContent="Нужны название и сумма (можно 0 ₽)";return}
  if(dkind==="p"&&draft&&c!==draft.g){const k=key(n);if(k)S.learned[k]=c}
  const photo=($("#rcptPrev")&&$("#rcptPrev").dataset.url)||"";
- const waRaw=$("#dwa")?$("#dwa").value.trim():"",hasNewWork=dkind==="p"&&!editingId&&waRaw!=="";
- const wa=hasNewWork?Math.round(+String(waRaw).replace(/\s/g,"")):null;
+ const waRaw=$("#dwa")?$("#dwa").value.trim():"",hasNewWork=(dkind==="both"||(dkind==="p"&&waRaw!==""))&&!editingId;
+ let wa=hasNewWork?Math.round(+String(waRaw===""?"0":waRaw).replace(/\s/g,"")):null;
  if(hasNewWork&&(Number.isNaN(wa)||wa<0)){$("#dh").textContent="Сумма работы — число, можно 0";return}
  if(editingId){
   const isU=editingId[0]==="u";
@@ -1105,44 +1292,138 @@ function applyMileageToSpec(){
 }
 
 
+function applyCarToChrome(car){
+  try{
+    const h1=document.querySelector("header h1");
+    if(h1)h1.textContent=car.title||"Моё авто";
+    const sp=document.querySelector(".spec");
+    if(sp){
+      const bits=[car.year,car.engine,car.power?car.power+" л.с.":"",car.gear,car.drive,car.spec].filter(Boolean);
+      sp.textContent=bits.join(", ")||"Данные машины";
+      delete sp.dataset.base;
+    }
+    const lg=document.querySelector(".lg");if(lg)lg.textContent=(car.title||"Авто").slice(0,14);
+    document.title=(car.title||"Моё авто")+" — журнал";
+  }catch(e){}
+}
+function renderCarView(){
+  const box=$("#ceView");if(!box)return;
+  const rows=infoFromMeta();
+  const CPI_L=typeof CPI!=="undefined"?CPI:'';
+  box.innerHTML=rows.map(([l,v])=>{
+    const empty=!String(v||"").trim();
+    return '<div class="ic'+(empty?' ic-empty':'')+'"><button type="button" class="ir" data-v="'+esc(v||"").replace(/"/g,"&quot;")+'" data-l="'+esc(l)+'"><span>'+esc(l)+'</span><b>'+(empty?'<em class="ph">не указано</em>':esc(v))+'</b><i>'+CPI_L+'</i></button></div>';
+  }).join("");
+}
 function fillCarEditor(){
-  let c={};try{const m=loadSetupMeta();if(m&&m.car)c=m.car}catch(e){}
-  const set=(id,v)=>{const el=$(id);if(el)el.value=v||""};
-  set("#ceTitle",c.title);set("#ceYear",c.year);set("#ceEngine",c.engine);
-  set("#ceVin",c.vin);set("#cePlate",c.plate);set("#ceOil",c.oil);set("#ceColor",c.color);set("#ceSpec",c.spec);
+  const c=getCarData();
+  const set=(id,v)=>{const el=$(id);if(el){el.value=v||"";el.removeAttribute("readonly");el.removeAttribute("disabled")}};
+  // не подставляем служебный текст из шапки
+  let spec=c.spec||"";
+  if(/Настрой машину|во вкладке|мастер/i.test(spec))spec="";
+  set("#ceTitle",c.title||"");
+  set("#ceYear",c.year||"");
+  set("#ceEngine",c.engine||"");
+  set("#cePower",c.power||"");
+  set("#ceVin",c.vin||"");
+  set("#cePlate",c.plate||"");
+  set("#ceOil",c.oil||"");
+  set("#ceColor",c.color||"");
+  set("#ceSpec",spec);
+  const setSel=(id,v,allowed)=>{
+    const el=$(id);if(!el)return;
+    const val=v||"";
+    // если старое значение не из списка — всё равно показываем пусто / ближайшее
+    el.value = allowed.includes(val)?val:"";
+    if(val && !allowed.includes(val)){
+      // попробуем угадать
+      const low=val.toLowerCase();
+      for(const a of allowed){if(a && low.includes(a.toLowerCase())){el.value=a;break}}
+    }
+  };
+  setSel("#ceGear",c.gear,["","МКПП","АКПП","CVT","РКПП"]);
+  setSel("#ceDrive",c.drive,["","Передний","Задний","Полный"]);
+  try{renderCarView()}catch(e){}
+}
+function setCarEditing(on){
+  const sheet=$("#ceSheet"),tog=$("#ceToggle");
+  if(tog)tog.textContent="Изменить";
+  if(!sheet){console.warn("ceSheet missing");return}
+  if(on){
+    try{fillCarEditor()}catch(e){console.warn(e)}
+    sheet.style.display="flex";
+    sheet.style.pointerEvents="auto";
+    sheet.classList.add("on");
+    document.body.style.overflow="hidden";
+  }else{
+    sheet.classList.remove("on");
+    sheet.style.display="none";
+    document.body.style.overflow="";
+  }
 }
 function saveCarEditor(){
   const meta=loadSetupMeta()||{done:true,demo:false,scenes:[],at:Date.now()};
+  const val=id=>{const el=$(id);return el?el.value.trim():""};
   meta.car={
-    title:($("#ceTitle")&&$("#ceTitle").value.trim())||"Моё авто",
-    year:($("#ceYear")&&$("#ceYear").value.trim())||"",
-    engine:($("#ceEngine")&&$("#ceEngine").value.trim())||"",
-    vin:($("#ceVin")&&$("#ceVin").value.trim())||"",
-    plate:($("#cePlate")&&$("#cePlate").value.trim())||"",
-    oil:($("#ceOil")&&$("#ceOil").value.trim())||"",
-    color:($("#ceColor")&&$("#ceColor").value.trim())||"",
-    spec:($("#ceSpec")&&$("#ceSpec").value.trim())||""
+    title:val("#ceTitle")||"Моё авто",
+    year:val("#ceYear"),
+    engine:val("#ceEngine"),
+    power:val("#cePower"),
+    drive:val("#ceDrive"),
+    gear:val("#ceGear"),
+    vin:val("#ceVin"),
+    plate:val("#cePlate"),
+    oil:val("#ceOil"),
+    color:val("#ceColor"),
+    spec:val("#ceSpec")
   };
   meta.done=true;
   saveSetupMeta(meta);
-  try{
-    const h1=document.querySelector("header h1");if(h1)h1.textContent=meta.car.title;
-    const sp=document.querySelector(".spec");if(sp){sp.textContent=[meta.car.year,meta.car.engine,meta.car.spec].filter(Boolean).join(", ")||"Данные машины";delete sp.dataset.base}
-    const lg=document.querySelector(".lg");if(lg)lg.textContent=(meta.car.title||"Авто").slice(0,14);
-    document.title=meta.car.title+" — журнал";
-  }catch(e){}
+  applyCarToChrome(meta.car);
   renderInfo();
+  renderCarView();
+  setCarEditing(false);
   toast("Данные сохранены");
 }
-(function bindCarEditor(){const b=$("#ceSave");if(b)b.onclick=()=>saveCarEditor()})();
+(function bindCarEditor(){
+  window.__ceClose=function(e){
+    if(e){try{e.preventDefault();e.stopPropagation()}catch(err){}}
+    try{fillCarEditor()}catch(err){}
+    setCarEditing(false);
+  };
+  window.__ceSave=function(e){
+    if(e){try{e.preventDefault();e.stopPropagation()}catch(err){}}
+    try{saveCarEditor()}catch(err){console.error(err);toast("Не удалось сохранить")}
+  };
+  function wire(){
+    const sheet=$("#ceSheet"),tog=$("#ceToggle"),view=$("#ceView");
+    if(tog)tog.onclick=function(e){e.preventDefault();setCarEditing(true)};
+    if(sheet)sheet.onclick=function(e){if(e.target===sheet)window.__ceClose(e)};
+    if(view)view.onclick=function(e){
+      const b=e.target.closest(".ir");if(!b)return;
+      const v=b.dataset.v||"",l=b.dataset.l||"";
+      if(!v){toast("Пусто — нажми «Изменить»");return}
+      cp(v,l);
+    };
+  }
+  wire();
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",wire);
+})();
 
 function renderInfo(){
   const row=(l,v,x)=>{
     const empty=!String(v||"").trim();
     return '<div class="ic'+(empty?' ic-empty':'')+'"><button class="ir" data-v="'+esc(v||"").replace(/"/g,"&quot;")+'" data-l="'+esc(l).replace(/"/g,"&quot;")+'"><span>'+esc(l)+'</span><b>'+(empty?'<em class="ph">не указано</em>':esc(v))+'</b><i>'+CPI+'</i></button>'+(x?'<button class="x" data-x="'+x+'" aria-label="Удалить">×</button>':"")+'</div>';
   };
-  const base=infoFromMeta();
-  $("#info").innerHTML=base.map(r=>row(r[0],r[1])).join("")+(S.info||[]).map(r=>row(r.l,r.v,r.id)).join("");
+  // паспорт — в блоке «Паспорт машины»; здесь только свои поля
+  const box=$("#info");
+  if(box){
+    const extra=(S.info||[]);
+    box.innerHTML=extra.length?extra.map(r=>row(r.l,r.v,r.id)).join(""):"";
+    const card=box.closest(".card");
+    if(card)card.style.display=extra.length?"":"none";
+  }
+  try{renderCarView()}catch(e){}
 }
 async function cp(v,l){let ok=false;try{await navigator.clipboard.writeText(v);ok=true}catch(e){try{const a=document.createElement("textarea");a.value=v;a.style.cssText="position:fixed;top:0;opacity:0";document.body.appendChild(a);a.select();ok=document.execCommand("copy");a.remove()}catch(x){}}toast(ok?"Скопировано: "+l:"Не удалось скопировать")}
 $("#info").onclick=e=>{const x=e.target.closest(".x"),b=e.target.closest(".ir");if(x){S.info=S.info.filter(r=>r.id!==x.dataset.x);save();renderInfo();return}if(b){cp(b.dataset.v,b.dataset.l);b.classList.add("ok");setTimeout(()=>b.classList.remove("ok"),900)}};
@@ -1156,7 +1437,7 @@ if($("#carsList"))$("#carsList").onclick=e=>{const b=e.target.closest("[data-car
 if($("#carAdd"))$("#carAdd").onclick=()=>{const id="c"+Date.now().toString(36),a=getCars();if(!a.some(c=>c.id===CAR))a.push({id:CAR,t:"Основная"});a.push({id,t:"Новая машина"});saveCars(a);try{localStorage.setItem(ACT_KEY,id)}catch(x){}location.reload()};
 renderCars();
 let tab="home",last=0;
-$("#nav").onclick=e=>{const b=e.target.closest("button[data-t]");if(!b)return;tab=b.dataset.t;[...$("#nav").querySelectorAll("button")].forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("on",s.id==="t-"+tab));if(tab==="stats"){renderMoBar();stats()}if(tab==="list")list();if(tab==="car"){renderInfo();fillCarEditor();renderMileage();renderCars();renderSafety();try{renderSceneEditor()}catch(e){}}scrollTo(0,0)};
+$("#nav").onclick=e=>{const b=e.target.closest("button[data-t]");if(!b)return;tab=b.dataset.t;[...$("#nav").querySelectorAll("button")].forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("on",s.id==="t-"+tab));if(tab==="stats"){renderMoBar();stats()}if(tab==="list")list();if(tab==="car"){renderInfo();fillCarEditor();setCarEditing(false);renderMileage();renderCars();renderSafety();try{renderSceneEditor()}catch(e){}}scrollTo(0,0)};
 $("#t-home").addEventListener("pointerdown",()=>last=Date.now());
 setInterval(()=>{if(tab==="home"&&!zoomed&&SCENES.length&&Date.now()-last>15000)show((cur+1)%SCENES.length)},7000);
 
@@ -1217,7 +1498,7 @@ async function renderSafety(){const box=$("#safeSt");if(!box)return;
 }
 $("#safeBak")&&($("#safeBak").onclick=()=>$("#exBak").click());
 $("#safePers")&&($("#safePers").onclick=async()=>{try{const ok=await navigator.storage.persist();toast(ok?"Хранилище защищено":"Браузер не дал защиту. Добавь страницу на экран «Домой»")}catch(e){toast("Не поддерживается в этом браузере")}renderSafety()});
-function backupNag(){const days=S.lastBackup?(Date.now()-S.lastBackup)/864e5:999;if((S.added||[]).length>=5&&days>14)setTimeout(()=>toast(S.lastBackup?"Копия-файл не делалась "+Math.floor(days)+" дн. Скачай её во вкладке «Авто»":"Скачай копию-файл во вкладке «Авто»: так данные не пропадут вместе с браузером"),3500)}
+function backupNag(){const days=S.lastBackup?(Date.now()-S.lastBackup)/864e5:999;if((S.added||[]).length>=5&&days>14)setTimeout(()=>toast(S.lastBackup?"Копия-файл не делалась "+Math.floor(days)+" дн. Скачай копию в «Авто»":"Скачай копию в «Авто» — на случай сброса браузера"),3500)}
 (async()=>{
  try{const r=await idbRead("state",SKEY);
   if(r&&r.json){const o=JSON.parse(r.json);
@@ -1693,7 +1974,7 @@ function goTab(name){
   try{
     if(name==="stats"){renderMoBar();stats()}
     if(name==="list")list();
-    if(name==="car"){renderInfo();fillCarEditor();renderMileage();renderCars();renderSafety();renderSceneEditor()}
+    if(name==="car"){renderInfo();fillCarEditor();setCarEditing(false);renderMileage();renderCars();renderSafety();renderSceneEditor()}
     if(name==="plan")renderNotes();
   }catch(e){}
 }
