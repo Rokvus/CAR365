@@ -602,7 +602,7 @@ body.rd .thumbs,body.rd .panel.intro{animation:rise 1.2s .7s cubic-bezier(.2,.8,
 </div>
 
 <div class="card" id="photoCard"><h3>Фото и узлы</h3><div class="sm" style="margin-bottom:12px">Замени фото, добавь ракурс или расставь точки заново</div><div id="sceneEditList"></div><div class="exp-row" style="margin-top:12px"><button class="btn" id="addScenePhoto">+ Фото</button><input type="file" id="addSceneFile" accept="image/*" hidden></div></div>
-<div class="card" id="safeCard" style="margin-top:24px"><h3>Данные</h3><div class="sm" id="safeSt" style="line-height:1.55"></div><div class="exp-row" style="margin-top:12px"><button class="btn" id="safeBak">Скачать копию</button><button class="gh" id="safePers">Защитить хранилище</button><button class="gh" id="exBak" hidden>Копия</button><button class="gh" id="imBak">Восстановить из файла</button><button class="gh" id="guideReplay">Пройти гид</button><button class="gh" id="exCsv" hidden>CSV</button><button class="gh" id="exJson" hidden>JSON</button><input type="file" id="imFile" accept=".json,application/json" hidden></div></div>
+<div class="card" id="safeCard" style="margin-top:24px"><h3>Данные</h3><div class="sm" id="safeSt" style="line-height:1.55"></div><div class="exp-row" style="margin-top:12px"><button class="btn" id="cloudBtn">Ключ и облако</button><button class="gh" id="safeBak">Скачать копию</button><button class="gh" id="safePers">Защитить хранилище</button><button class="gh" id="exBak" hidden>Копия</button><button class="gh" id="imBak">Восстановить из файла</button><button class="gh" id="guideReplay">Пройти гид</button><button class="gh" id="exCsv" hidden>CSV</button><button class="gh" id="exJson" hidden>JSON</button><input type="file" id="imFile" accept=".json,application/json" hidden></div></div>
 </div></section>
 <div id="edOverlay"><div class="ed-wrap"><div id="edBody"></div></div></div>
 </div></div>
@@ -650,7 +650,7 @@ body.rd .thumbs,body.rd .panel.intro{animation:rise 1.2s .7s cubic-bezier(.2,.8,
 <script>
 const TEMPLATE=true;
 /* Future cloud DB (e.g. Supabase) — fill when ready; local storage works offline until then */
-const DB_CONFIG={url:"",anonKey:"",enabled:false};
+const DB_CONFIG={url:"https://klgtiluurzwrywcqnocd.supabase.co",anonKey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsZ3RpbHV1cnp3cnl3Y3Fub2NkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NTc0NDgsImV4cCI6MjEwODQzMzQ0OH0.iguIT6LIo73ChUeAUnftb-9qYu07Gtktyv3QTjXwif4",enabled:true};
 
 const SVC_ON=false;
 const CARS_KEY="carjournal_cars",ACT_KEY="carjournal_active";
@@ -659,7 +659,7 @@ const SKEY="carjournal_state"+SFX,SETUP_KEY="carjournal_setup"+SFX,GUIDE_KEY="ca
 const META0=(()=>{try{return JSON.parse(localStorage.getItem(SETUP_KEY)||"null")}catch(e){return null}})();
 const CUSTOM=!!(META0&&META0.done&&!META0.demo);
 function getCars(){try{const a=JSON.parse(localStorage.getItem(CARS_KEY)||"null");if(Array.isArray(a)&&a.length)return a}catch(e){}return[{id:CAR,t:(META0&&META0.car&&META0.car.title)||"Основная"}]}
-function saveCars(a){try{localStorage.setItem(CARS_KEY,JSON.stringify(a))}catch(e){}}
+function saveCars(a){try{localStorage.setItem(CARS_KEY,JSON.stringify(a))}catch(e){}try{cloudCars(a)}catch(e){}}
 function getCarData(){
   let c={};
   try{const m=loadSetupMeta();if(m&&m.car)c=m.car;else if(META0&&META0.car)c=META0.car}catch(e){if(META0&&META0.car)c=META0.car}
@@ -1133,12 +1133,146 @@ mic.addEventListener("pointerup",()=>{if(!rec&&!holding)return;stopRec(true)});
 mic.addEventListener("pointercancel",()=>stopRec(false));
 mic.addEventListener("click",e=>{e.preventDefault()});
 
-(async()=>{try{if(!window.claude)return;const r=await Promise.all([claude.use("db"),claude.use("user")]);if(!r[0]||!r[1])return;const id=await r[1].id();if(!id)return;
- dbDoc=r[0].collection("data/users/"+id).doc("carjournal"+SFX);const sn=await dbDoc.get(),d=sn.exists&&sn.data();
+/* ===== Облако: Supabase + ключ восстановления ===== */
+const CLOUD_ON=!!(DB_CONFIG.enabled&&DB_CONFIG.url&&DB_CONFIG.anonKey);
+const JKEY_KEY="carjournal_key",ACK_KEY="carjournal_key_ack",TS_KEY="carjournal_cloudts"+SFX,KEYALPHA="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+let cloudKey=null,cloudErr=false,cloudBusy=false,metaT=null;
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const cloudTs=()=>+lsGet(TS_KEY)||0;
+const normKey=s=>String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+const fmtKey=k=>(normKey(k).match(/.{1,4}/g)||[]).join("-");
+function genKey(){const a=new Uint8Array(32);crypto.getRandomValues(a);let k="";a.forEach(v=>{k+=KEYALPHA[v&31]});return k}
+async function rpc(fn,args){
+ const r=await fetch(DB_CONFIG.url+"/rest/v1/rpc/"+fn,{method:"POST",headers:{"Content-Type":"application/json",apikey:DB_CONFIG.anonKey,Authorization:"Bearer "+DB_CONFIG.anonKey},body:JSON.stringify(args)});
+ if(!r.ok){let m="";try{m=(await r.json()).message||""}catch(e){}throw new Error(m||("HTTP "+r.status))}
+ const t=await r.text();return t?JSON.parse(t):null}
+async function cloudRow(id,key){const r=await rpc("journal_get",{p_key:key||cloudKey,p_car:id});return Array.isArray(r)&&r.length?r[0]:null}
+async function cloudPut(id,patch){const a={p_key:cloudKey,p_car:id};if(patch.state!==undefined)a.p_state=patch.state;if(patch.setup!==undefined)a.p_setup=patch.setup;await rpc("journal_put",a)}
+const createdAt=x=>{const n=+String(x.id||"").slice(1);return isNaN(n)?0:n};
+/* добавляет в base записи из other, созданные после последней синхронизации (удалённые раньше — не воскрешает) */
+function unionAdded(base,other,since){const have=new Set((base.added||[]).map(x=>x.id));let n=0;(other.added||[]).forEach(x=>{if(!have.has(x.id)&&createdAt(x)>since){base.added.push(x);have.add(x.id);n++}});return n}
+function cloudRefresh(){rebuild();renderNotes();renderInfo();renderMileage();applyMileageToSpec();if(tab==="list")list();if(tab==="stats")stats()}
+function makeDbDoc(){return{
+ get:async()=>{const r=await cloudRow(CAR),st=r&&r.state;return{exists:!!(st&&st.v),data:()=>({s:JSON.stringify(st)})}},
+ set:async o=>{
+  const mine=JSON.parse(o.s),row=await cloudRow(CAR),cs=row&&row.state;
+  if(cs&&cs.v&&(cs.ts||0)>cloudTs()&&(cs.ts||0)!==(mine.ts||0)){
+   const n=unionAdded(mine,cs,cloudTs());
+   if(n){const have=new Set(S.added.map(x=>x.id));mine.added.forEach(x=>{if(!have.has(x.id))S.added.push(x)});try{cloudRefresh()}catch(e){}}
+  }
+  await cloudPut(CAR,{state:mine});lsSet(TS_KEY,String(mine.ts||Date.now()));cloudErr=false;try{renderSafety()}catch(e){}
+ }}}
+function cloudMeta(o){if(!CLOUD_ON||!cloudKey||!dbDoc||!o||!o.done)return;clearTimeout(metaT);metaT=setTimeout(()=>{cloudPut(CAR,{setup:o}).catch(()=>{cloudErr=true})},800)}
+function cloudCars(a){if(!CLOUD_ON||!cloudKey||!dbDoc)return;cloudPut("_cars",{state:{list:a}}).catch(()=>{cloudErr=true})}
+
+/* --- фото сцен/узлов в облаке --- */
+const PH_MAP_KEY="carjournal_phmap"+SFX,PH_PEND_KEY="carjournal_phpend"+SFX;
+let phStat={have:0,total:0},phErr=false,phQ=Promise.resolve();
+const phMap=()=>{try{return JSON.parse(lsGet(PH_MAP_KEY)||"{}")||{}}catch(e){return{}}};
+const phMark=(k,ts)=>{const m=phMap();m[k]=ts;lsSet(PH_MAP_KEY,JSON.stringify(m))};
+const phPend=()=>{try{return JSON.parse(lsGet(PH_PEND_KEY)||"[]")||[]}catch(e){return[]}};
+const phSetPend=a=>lsSet(PH_PEND_KEY,JSON.stringify([...new Set(a)]));
+async function phUpload(key,data){
+ if(data.length>3500000)data=await recompressDataUrl(data,1100,.6);
+ const ts=await rpc("journal_photo_put",{p_key:cloudKey,p_car:CAR,p_photo:key,p_data:data});
+ phMark(key,ts);phSetPend(phPend().filter(k=>k!==key));return ts}
+function cloudPhotoPush(key,data){
+ if(!CLOUD_ON)return;
+ phSetPend(phPend().concat(key));
+ if(!cloudKey||!dbDoc)return;
+ phQ=phQ.then(()=>phUpload(key,data)).then(()=>{phErr=false;try{renderSafety()}catch(e){}}).catch(e=>{phErr=true;console.warn("photo push",e)})}
+async function phPull(key){
+ const g=await rpc("journal_photo_get",{p_key:cloudKey,p_car:CAR,p_photo:key}),row=Array.isArray(g)&&g[0];
+ if(!row||!row.data)return false;
+ await storePhoto(key,row.data,true);phMark(key,row.updated_at);return true}
+async function cloudPhotos(){
+ const meta=loadSetupMeta(),scenes=(meta&&meta.scenes)||[];
+ phStat={have:0,total:scenes.length};phErr=false;
+ if(!scenes.length)return;
+ let list=await rpc("journal_photo_list",{p_key:cloudKey,p_car:CAR});list=Array.isArray(list)?list:[];
+ const remote=new Map(list.map(r=>[r.photo_key,r])),pend=new Set(phPend());let pulled=false;
+ for(const sc of scenes){
+  const key=sc.key,r=remote.get(key);let local=null;try{local=await loadPhoto(key)}catch(e){}
+  try{
+   if(local&&(!r||pend.has(key))){await phUpload(key,local);phStat.have++}
+   else if(r&&!local){if(await phPull(key)){pulled=true;phStat.have++}}
+   else if(r&&local){
+    const rec=phMap()[key];
+    if(rec&&Date.parse(r.updated_at)>Date.parse(rec)){if(await phPull(key))pulled=true}
+    else if(!rec)phMark(key,r.updated_at);
+    phStat.have++}
+  }catch(e){phErr=true;console.warn("photo",key,e)}
+ }
+ try{renderSafety()}catch(e){}
+ if(pulled){let done=false;try{done=sessionStorage.getItem("carjournal_phr")==="1";sessionStorage.setItem("carjournal_phr","1")}catch(e){done=true}if(!done)location.reload()}
+}
+function cloudStatus(){return !CLOUD_ON?"Облако не подключено.":cloudKey?"Облако: <b>включено</b>"+(cloudErr?" · <b>последняя синхронизация не удалась</b>":" · данные синхронизируются сами")+(phStat.total?" · фото сцен в облаке: <b>"+phStat.have+" из "+phStat.total+"</b>"+(phErr?" (есть ошибки)":""):"")+". Сохрани ключ восстановления (кнопка «Ключ и облако»).":"Облако: подключается…"}
+function updateCloudUi(){const b=$("#cloudBtn");if(b)b.style.display=CLOUD_ON?"":"none";try{renderSafety()}catch(e){}}
+async function cloudSync(){
+ const loc=loadSetupMeta(),row=await cloudRow(CAR);let reload=false;
+ // паспорт и узлы
+ if(row&&row.setup&&row.setup.done){if(!(loc&&loc.done)){lsSet(SETUP_KEY,JSON.stringify(row.setup));reload=true}}
+ else if(loc&&loc.done){await cloudPut(CAR,{setup:loc})}
+ // список машин
+ const cr=await cloudRow("_cars"),cl=cr&&cr.state&&Array.isArray(cr.state.list)?cr.state.list:[],hasLocal=!!lsGet(CARS_KEY);
+ if(cl.length||hasLocal){const m=new Map(cl.map(c=>[c.id,c]));getCars().forEach(c=>{if(hasLocal||!m.has(c.id))m.set(c.id,c)});const u=[...m.values()];
+  if(!hasLocal&&cl.length){lsSet(CARS_KEY,JSON.stringify(u));reload=reload||u.length>1}else{lsSet(CARS_KEY,JSON.stringify(u))}
+  if(JSON.stringify(u)!==JSON.stringify(cl))await cloudPut("_cars",{state:{list:u}})}
+ if(reload){location.reload();return}
+ // траты
+ const doc=makeDbDoc(),sn=await doc.get(),d=sn.exists&&sn.data(),since=cloudTs();
  if(d&&d.s){const nd=Object.assign(S0(),JSON.parse(d.s));
-  if((S.ts||0)>(nd.ts||0)){save()}
-  else{const ph={};(S.added||[]).forEach(x=>{if(x.photo)ph[x.id]=x.photo});(nd.added||[]).forEach(x=>{if(!x.photo&&ph[x.id])x.photo=ph[x.id]});Object.keys(S.edits||{}).forEach(id=>{const p=S.edits[id]&&S.edits[id].photo;if(p&&nd.edits&&nd.edits[id]&&!nd.edits[id].photo)nd.edits[id].photo=p});
-   S=nd;notes=S.notes;try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}rebuild();renderNotes();renderInfo();renderMileage();applyMileageToSpec();if(tab==="list")list();if(tab==="stats")stats()}}else save()}catch(e){}})();
+  if((S.ts||0)>(nd.ts||0)){unionAdded(S,nd,since);dbDoc=doc;cloudRefresh();save()}
+  else{const added=unionAdded(nd,S,since);
+   const ph={};(S.added||[]).forEach(x=>{if(x.photo)ph[x.id]=x.photo});(nd.added||[]).forEach(x=>{if(!x.photo&&ph[x.id])x.photo=ph[x.id]});Object.keys(S.edits||{}).forEach(id=>{const p=S.edits[id]&&S.edits[id].photo;if(p&&nd.edits&&nd.edits[id]&&!nd.edits[id].photo)nd.edits[id].photo=p});
+   S=nd;notes=S.notes;lsSet(TS_KEY,String(nd.ts||0));try{localStorage.setItem(SKEY,JSON.stringify(S,stripPh))}catch(e){}
+   dbDoc=doc;cloudRefresh();if(added)save()}
+ }else{dbDoc=doc;save()}
+ cloudErr=false;
+ try{await cloudPhotos()}catch(e){phErr=true;console.warn("photos",e)}
+}
+async function cloudInit(){
+ if(!CLOUD_ON||cloudBusy)return;cloudBusy=true;
+ try{
+  let k=normKey(lsGet(JKEY_KEY));
+  if(k.length<24){k=genKey();lsSet(JKEY_KEY,k);lsSet(ACK_KEY,"")}
+  cloudKey=k;
+  try{await cloudSync()}catch(e){cloudErr=true;console.warn("cloud",e);toast("Облако недоступно, данные пока только на этом устройстве")}
+  updateCloudUi();
+  if(lsGet(ACK_KEY)!=="1")setTimeout(()=>showKeyUi(true),900);
+ }finally{cloudBusy=false}
+}
+function showKeyUi(first){
+ if(!CLOUD_ON||!cloudKey||$("#cloudAuth"))return;
+ if(!$("#cloudAuthCss")){const st=document.createElement("style");st.id="cloudAuthCss";st.textContent="#cloudAuth{position:fixed;inset:0;z-index:99999;background:rgba(5,7,10,.78);backdrop-filter:blur(8px);display:grid;place-items:center;padding:20px;overflow:auto}#cloudAuth .ca-box{width:100%;max-width:380px;background:var(--bg2);color:var(--tx);border:1px solid var(--line);border-radius:26px;padding:24px;font:400 14px Manrope,sans-serif}#cloudAuth h3{margin:0 0 8px;font:600 17px Manrope,sans-serif}#cloudAuth p{margin:0 0 14px;color:var(--mut);line-height:1.5;font-size:13px}#cloudAuth .ca-key{font:600 15px ui-monospace,Menlo,monospace;letter-spacing:.04em;word-break:break-all;line-height:1.6;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px;user-select:all}#cloudAuth input{box-sizing:border-box;width:100%;margin:0 0 10px;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:400 14px ui-monospace,Menlo,monospace}#cloudAuth .ca-msg{min-height:18px;margin:2px 0 8px;font-size:12.5px;color:var(--ac)}#cloudAuth .ca-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}#cloudAuth hr{border:0;border-top:1px solid var(--line);margin:16px 0}";document.head.appendChild(st)}
+ const o=document.createElement("div");o.id="cloudAuth";
+ o.innerHTML='<div class="ca-box"><h3>'+(first?"Сохрани ключ восстановления":"Ключ и облако")+'</h3><p>'+(first?"Журнал уже сохраняется в облаке автоматически. ":"")+'Этот ключ — единственный способ вернуть данные на новом телефоне или после очистки браузера. Сохрани его в заметки или менеджер паролей и никому не показывай: у кого ключ, тот видит журнал.</p><div class="ca-key" id="caKey">'+fmtKey(cloudKey)+'</div><div class="ca-row"><button class="btn" id="caCopy">Скопировать</button><button class="gh" id="caClose">'+(first?"Я сохранил ключ":"Закрыть")+'</button></div><hr><p style="margin-bottom:10px">Уже есть ключ с другого устройства? Вставь его, и журнал подтянется сюда.</p><input id="caIn" placeholder="XXXX-XXXX-XXXX-…" autocomplete="off" autocapitalize="characters" spellcheck="false"><div class="ca-msg" id="caMsg"></div><button class="gh" id="caUse" style="padding-left:0">Подключить этот ключ</button></div>';
+ document.body.appendChild(o);
+ const msg=t=>{$("#caMsg").textContent=t};
+ $("#caCopy").onclick=async()=>{const t=fmtKey(cloudKey);try{await navigator.clipboard.writeText(t);toast("Ключ скопирован")}catch(e){const r=document.createRange();r.selectNodeContents($("#caKey"));const s=getSelection();s.removeAllRanges();s.addRange(r);try{document.execCommand("copy");toast("Ключ скопирован")}catch(e2){toast("Выдели ключ и скопируй вручную")}}};
+ $("#caClose").onclick=()=>{if(first)lsSet(ACK_KEY,"1");o.remove()};
+ $("#caUse").onclick=async()=>{
+  const k=normKey($("#caIn").value);
+  if(k.length<24){msg("Ключ слишком короткий — проверь, что вставил целиком");return}
+  if(k===cloudKey){msg("Этот ключ уже используется здесь");return}
+  msg("Ищем журнал…");
+  try{
+   const a=await cloudRow(CAR,k),b=await cloudRow("_cars",k);
+   if(!a&&!b){msg("Журнал по этому ключу не найден. Проверь ключ.");return}
+   if(!confirm("Подключить журнал по этому ключу? Данные с этого устройства будут объединены с ним. Прежний ключ этого устройства перестанет использоваться — сохрани его, если там были данные."))return;
+   lsSet(JKEY_KEY,k);lsSet(ACK_KEY,"1");lsSet(TS_KEY,"0");lsSet(PH_MAP_KEY,"{}");lsSet(PH_PEND_KEY,"[]");cloudKey=k;dbDoc=null;o.remove();
+   try{await cloudSync()}catch(e){cloudErr=true;toast("Не удалось загрузить журнал, попробуй ещё раз")}
+   updateCloudUi();
+  }catch(e){msg("Нет связи с облаком")}
+ };
+}
+(function cloudBoot(){
+ const cb=$("#cloudBtn");
+ if(cb)cb.onclick=()=>{if(!CLOUD_ON){toast("Облако не подключено");return}if(!cloudKey){toast("Облако ещё подключается…");return}showKeyUi(false)};
+ addEventListener("online",()=>{if(CLOUD_ON&&cloudKey&&!dbDoc)cloudInit()});
+ updateCloudUi();
+ cloudInit();
+})();
 
 
 const MON={января:0,февраля:1,марта:2,апреля:3,мая:4,июня:5,июля:6,августа:7,сентября:8,октября:9,ноября:10,декабря:11};
@@ -1450,7 +1584,7 @@ async function idbGet(k){const db=await idbOpen();return new Promise((res,rej)=>
 const PHOTO_LS_KEY="carjournal_photos"+SFX;
 function photoLsGet(){try{return JSON.parse(localStorage.getItem(PHOTO_LS_KEY)||"{}")||{}}catch(e){return{}}}
 function photoLsSet(map){try{localStorage.setItem(PHOTO_LS_KEY,JSON.stringify(map));return true}catch(e){return false}}
-async function storePhoto(key,dataUrl){
+async function storePhoto(key,dataUrl,noCloud){
   let ok=false;
   try{await idbSet(key,dataUrl);const c=await idbGet(key);ok=!!c}catch(e){console.warn("idb store",e)}
   // запасной канал в localStorage (на случай, если IDB на iOS «теряет» фото)
@@ -1464,6 +1598,7 @@ async function storePhoto(key,dataUrl){
       photoLsSet(pack);
     }
   }catch(e){console.warn("ls photo",e)}
+  if(!noCloud){try{cloudPhotoPush(key,dataUrl)}catch(e){}}
   return ok;
 }
 async function loadPhoto(key){
@@ -1493,7 +1628,7 @@ async function takeSnapshot(label){try{const ts=Date.now();await idbPut("snaps",
 async function renderSafety(){const box=$("#safeSt");if(!box)return;
  let pers=null;try{pers=navigator.storage&&navigator.storage.persisted?await navigator.storage.persisted():null}catch(e){}
  const days=S.lastBackup?Math.floor((Date.now()-S.lastBackup)/864e5):null;
- box.innerHTML="Автосохранение в браузере <b>включено</b>"+(pers===true?" · хранилище защищено":pers===false?" · <b>не защищено</b> (может очиститься)":"")+"<br>Файл-копия: "+(days==null?"<b>ещё не скачивалась</b> — скачай на всякий случай":days===0?"скачана сегодня":"скачана "+days+" дн. назад")+"<br><span style=\"opacity:.85\">Записи старше месяца нельзя удалить. Когда появится облако — данные будут синхронизироваться сами.</span>";
+ box.innerHTML="Автосохранение в браузере <b>включено</b>"+(pers===true?" · хранилище защищено":pers===false?" · <b>не защищено</b> (может очиститься)":"")+"<br>Файл-копия: "+(days==null?"<b>ещё не скачивалась</b> — скачай на всякий случай":days===0?"скачана сегодня":"скачана "+days+" дн. назад")+"<br><span style=\"opacity:.85\">Записи старше месяца нельзя удалить. "+cloudStatus()+"</span>";
  if($("#safePers"))$("#safePers").style.display=pers===false?"":"none";
 }
 $("#safeBak")&&($("#safeBak").onclick=()=>$("#exBak").click());
@@ -1526,7 +1661,7 @@ const SCENE_SLOTS=[
 ];
 let setup={step:0,car:{title:"",year:"",engine:"",spec:""},slots:{},editIdx:0};
 function loadSetupMeta(){try{return JSON.parse(localStorage.getItem(SETUP_KEY)||"null")}catch(e){return null}}
-function saveSetupMeta(o){try{localStorage.setItem(SETUP_KEY,JSON.stringify(o))}catch(e){}}
+function saveSetupMeta(o){try{localStorage.setItem(SETUP_KEY,JSON.stringify(o))}catch(e){}try{cloudMeta(o)}catch(e){}}
 function compressImg(file,max=1400,q=.72){return new Promise((res,rej)=>{const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",q))};im.onerror=rej;im.src=rd.result};rd.onerror=rej;rd.readAsDataURL(file)})}
 function renderSuSteps(){const el=$("#suSteps");if(el)el.innerHTML=[0,1,2,3].map(i=>'<i class="'+(i<=setup.step?"on":"")+'"></i>').join("")}
 async function applyFullBackup(o){
@@ -1545,7 +1680,7 @@ function showSetupStep(){
  const su=$("#su");if(!su)return;su.classList.add("on");renderSuSteps();
  const body=$("#suBody");
  if(setup.step===0){
-  body.innerHTML='<h1>Свой журнал</h1><p class="sm">Настрой под свою машину или восстанови копию-файл. После настройки копия скачается сама — сохрани её вне браузера.</p><div class="su-warn">Если очистить данные сайта, журнал пропадёт из браузера. Копия-файл — единственная надёжная страховка без аккаунта. Позже можно подключить Supabase.</div><div class="su-card"><h3>Старт</h3><div class="su-actions" style="flex-direction:column;align-items:stretch"><button class="btn" id="suNew">Настроить своё авто</button><button class="gh" id="suRestore">Восстановить из файла</button></div><input type="file" id="suFile" accept=".json,application/json" hidden></div>';
+  body.innerHTML='<h1>Свой журнал</h1><p class="sm">Настрой под свою машину или восстанови копию-файл. После настройки копия скачается сама — сохрани её вне браузера.</p><div class="su-warn">Если очистить данные сайта, журнал пропадёт из браузера, но он остаётся в облаке — вернуть его можно по ключу восстановления («Ключ и облако»). Копию-файл тоже лучше иногда скачивать.</div><div class="su-card"><h3>Старт</h3><div class="su-actions" style="flex-direction:column;align-items:stretch"><button class="btn" id="suNew">Настроить своё авто</button><button class="gh" id="suRestore">Восстановить из файла</button></div><input type="file" id="suFile" accept=".json,application/json" hidden></div>';
   $("#suNew").onclick=()=>{setup.step=1;showSetupStep()};
   $("#suRestore").onclick=()=>$("#suFile").click();
   if(getCars().length>1){const b=document.createElement("button");b.className="gh";b.id="suCancel";b.textContent="Отмена, вернуться к другой машине";b.onclick=()=>{const a=getCars().filter(c=>c.id!==CAR);saveCars(a);localStorage.setItem(ACT_KEY,a[0].id);location.reload()};$("#suNew").parentNode.appendChild(b)}
