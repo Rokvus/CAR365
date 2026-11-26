@@ -1231,20 +1231,51 @@ async function cloudSync(){
  cloudErr=false;
  try{await cloudPhotos()}catch(e){phErr=true;console.warn("photos",e)}
 }
+
+const cookieGet=n=>{try{const m=document.cookie.match(new RegExp("(?:^|; )"+n+"=([^;]*)"));return m?decodeURIComponent(m[1]):""}catch(e){return""}};
+function keySave(k){
+ lsSet(JKEY_KEY,k);
+ try{document.cookie="cjkey="+k+"; max-age=34560000; path="+location.pathname.replace(/[^/]*$/,"")+"; SameSite=Lax"+(location.protocol==="https:"?"; Secure":"")}catch(e){}
+ try{idbPut("state","cloud_key",k).catch(()=>{})}catch(e){}}
+async function keyLoad(){
+ let k=normKey(lsGet(JKEY_KEY));if(k.length>=24)return k;
+ k=normKey(cookieGet("cjkey"));
+ if(k.length<24){try{k=normKey(await idbRead("state","cloud_key"))}catch(e){k=""}}
+ if(k.length>=24){keySave(k);return k}
+ return ""}
+function showCloudWelcome(){
+ if(!CLOUD_ON||$("#cloudAuth"))return;authCss();
+ const o=document.createElement("div");o.id="cloudAuth";
+ o.innerHTML='<div class="ca-box"><h3>Журнал авто</h3><p>Если журнал уже вёлся на этом или другом устройстве, подставь ключ восстановления: менеджер паролей может сделать это сам.</p><form id="caForm" autocomplete="on"><input type="text" name="username" value="car-journal" autocomplete="username" readonly tabindex="-1" style="position:absolute;opacity:0;height:1px;width:1px;pointer-events:none"><input id="caIn" type="password" name="password" autocomplete="current-password" placeholder="Ключ восстановления" spellcheck="false" autocapitalize="characters"><div class="ca-msg" id="caMsg"></div><div class="ca-row"><button class="btn" id="caUse" type="submit">Подключить журнал</button></div></form><hr><p style="margin-bottom:10px">Первый раз здесь? Создадим новый журнал и ключ к нему.</p><button class="gh" id="caNew" style="padding-left:0">Начать новый журнал</button></div>';
+ document.body.appendChild(o);
+ const msg=t=>{$("#caMsg").textContent=t};
+ $("#caForm").onsubmit=async e=>{
+  e.preventDefault();const k=normKey($("#caIn").value);
+  if(k.length<24){msg("Ключ слишком короткий — проверь, что вставил целиком");return}
+  msg("Ищем журнал…");
+  try{
+   const a=await cloudRow(CAR,k),b=await cloudRow("_cars",k);
+   if(!a&&!b){msg("Журнал по этому ключу не найден. Проверь ключ.");return}
+   keySave(k);lsSet(ACK_KEY,"1");lsSet(TS_KEY,"0");lsSet(PH_MAP_KEY,"{}");lsSet(PH_PEND_KEY,"[]");o.remove();cloudInit()
+  }catch(err){msg("Нет связи с облаком")}
+ };
+ $("#caNew").onclick=()=>{keySave(genKey());lsSet(ACK_KEY,"");o.remove();cloudInit()};
+}
 async function cloudInit(){
  if(!CLOUD_ON||cloudBusy)return;cloudBusy=true;
  try{
-  let k=normKey(lsGet(JKEY_KEY));
-  if(k.length<24){k=genKey();lsSet(JKEY_KEY,k);lsSet(ACK_KEY,"")}
+  const k=await keyLoad();
+  if(k.length<24){showCloudWelcome();return}
   cloudKey=k;
   try{await cloudSync()}catch(e){cloudErr=true;console.warn("cloud",e);toast("Облако недоступно, данные пока только на этом устройстве")}
   updateCloudUi();
   if(lsGet(ACK_KEY)!=="1")setTimeout(()=>showKeyUi(true),900);
  }finally{cloudBusy=false}
 }
+function authCss(){if(!$("#cloudAuthCss")){const st=document.createElement("style");st.id="cloudAuthCss";st.textContent="#cloudAuth{position:fixed;inset:0;z-index:99999;background:rgba(5,7,10,.78);backdrop-filter:blur(8px);display:grid;place-items:center;padding:20px;overflow:auto}#cloudAuth .ca-box{width:100%;max-width:380px;background:var(--bg2);color:var(--tx);border:1px solid var(--line);border-radius:26px;padding:24px;font:400 14px Manrope,sans-serif}#cloudAuth h3{margin:0 0 8px;font:600 17px Manrope,sans-serif}#cloudAuth p{margin:0 0 14px;color:var(--mut);line-height:1.5;font-size:13px}#cloudAuth .ca-key{font:600 15px ui-monospace,Menlo,monospace;letter-spacing:.04em;word-break:break-all;line-height:1.6;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px;user-select:all}#cloudAuth input{box-sizing:border-box;width:100%;margin:0 0 10px;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:400 14px ui-monospace,Menlo,monospace}#cloudAuth .ca-msg{min-height:18px;margin:2px 0 8px;font-size:12.5px;color:var(--ac)}#cloudAuth .ca-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}#cloudAuth hr{border:0;border-top:1px solid var(--line);margin:16px 0}";document.head.appendChild(st)}}
 function showKeyUi(first){
  if(!CLOUD_ON||!cloudKey||$("#cloudAuth"))return;
- if(!$("#cloudAuthCss")){const st=document.createElement("style");st.id="cloudAuthCss";st.textContent="#cloudAuth{position:fixed;inset:0;z-index:99999;background:rgba(5,7,10,.78);backdrop-filter:blur(8px);display:grid;place-items:center;padding:20px;overflow:auto}#cloudAuth .ca-box{width:100%;max-width:380px;background:var(--bg2);color:var(--tx);border:1px solid var(--line);border-radius:26px;padding:24px;font:400 14px Manrope,sans-serif}#cloudAuth h3{margin:0 0 8px;font:600 17px Manrope,sans-serif}#cloudAuth p{margin:0 0 14px;color:var(--mut);line-height:1.5;font-size:13px}#cloudAuth .ca-key{font:600 15px ui-monospace,Menlo,monospace;letter-spacing:.04em;word-break:break-all;line-height:1.6;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px;user-select:all}#cloudAuth input{box-sizing:border-box;width:100%;margin:0 0 10px;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:400 14px ui-monospace,Menlo,monospace}#cloudAuth .ca-msg{min-height:18px;margin:2px 0 8px;font-size:12.5px;color:var(--ac)}#cloudAuth .ca-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}#cloudAuth hr{border:0;border-top:1px solid var(--line);margin:16px 0}";document.head.appendChild(st)}
+ authCss();
  const o=document.createElement("div");o.id="cloudAuth";
  o.innerHTML='<div class="ca-box"><h3>'+(first?"Сохрани ключ восстановления":"Ключ и облако")+'</h3><p>'+(first?"Журнал уже сохраняется в облаке автоматически. ":"")+'Этот ключ — единственный способ вернуть данные на новом телефоне или после очистки браузера. Сохрани его в заметки или менеджер паролей и никому не показывай: у кого ключ, тот видит журнал.</p><div class="ca-key" id="caKey">'+fmtKey(cloudKey)+'</div><div class="ca-row"><button class="btn" id="caCopy">Скопировать</button><button class="gh" id="caClose">'+(first?"Я сохранил ключ":"Закрыть")+'</button></div><hr><p style="margin-bottom:10px">Уже есть ключ с другого устройства? Вставь его, и журнал подтянется сюда.</p><input id="caIn" placeholder="XXXX-XXXX-XXXX-…" autocomplete="off" autocapitalize="characters" spellcheck="false"><div class="ca-msg" id="caMsg"></div><button class="gh" id="caUse" style="padding-left:0">Подключить этот ключ</button></div>';
  document.body.appendChild(o);
@@ -1260,7 +1291,7 @@ function showKeyUi(first){
    const a=await cloudRow(CAR,k),b=await cloudRow("_cars",k);
    if(!a&&!b){msg("Журнал по этому ключу не найден. Проверь ключ.");return}
    if(!confirm("Подключить журнал по этому ключу? Данные с этого устройства будут объединены с ним. Прежний ключ этого устройства перестанет использоваться — сохрани его, если там были данные."))return;
-   lsSet(JKEY_KEY,k);lsSet(ACK_KEY,"1");lsSet(TS_KEY,"0");lsSet(PH_MAP_KEY,"{}");lsSet(PH_PEND_KEY,"[]");cloudKey=k;dbDoc=null;o.remove();
+   keySave(k);lsSet(ACK_KEY,"1");lsSet(TS_KEY,"0");lsSet(PH_MAP_KEY,"{}");lsSet(PH_PEND_KEY,"[]");cloudKey=k;dbDoc=null;o.remove();
    try{await cloudSync()}catch(e){cloudErr=true;toast("Не удалось загрузить журнал, попробуй ещё раз")}
    updateCloudUi();
   }catch(e){msg("Нет связи с облаком")}
@@ -1268,7 +1299,7 @@ function showKeyUi(first){
 }
 (function cloudBoot(){
  const cb=$("#cloudBtn");
- if(cb)cb.onclick=()=>{if(!CLOUD_ON){toast("Облако не подключено");return}if(!cloudKey){toast("Облако ещё подключается…");return}showKeyUi(false)};
+ if(cb)cb.onclick=()=>{if(!CLOUD_ON){toast("Облако не подключено");return}if(!cloudKey){showCloudWelcome();return}showKeyUi(false)};
  addEventListener("online",()=>{if(CLOUD_ON&&cloudKey&&!dbDoc)cloudInit()});
  updateCloudUi();
  cloudInit();
